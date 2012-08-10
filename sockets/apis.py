@@ -15,9 +15,9 @@ SETTINGS = {
 
 try:
   import django
-  WORDSEG_UNIX_DOMAIN = getattr(django.conf.settings, 'WORDSEG_SOCKET', SETTINGS['wordseg_default']),
+  WORDSEG_UNIX_DOMAIN = getattr(django.conf.settings, 'WORDSEG_SOCKET', SETTINGS['wordseg_default'])
   RELATIONS_UNIX_DOMAIN = getattr(django.conf.settings, 'RELATION_SOCKET', SETTINGS['relation_default'])
-except:
+except Exception:
   WORDSEG_UNIX_DOMAIN = SETTINGS['wordseg_default']
   RELATIONS_UNIX_DOMAIN =  SETTINGS['relation_default']
 
