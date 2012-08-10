@@ -2,10 +2,12 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-from services.wordseg import start as wordseg
+from sockets.wordseg import run as wordseg
+from sockets.relation import run as relations
 
 patterns = {
   'wordseg': wordseg,
+  'services': relations
 }
 help = "args list: %r" %patterns.keys()
 

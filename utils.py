@@ -40,9 +40,11 @@ class TagFileHelper(object):
 
   def decode(self, recode):
     recode = to_unicode(recode)
-    tokens = recode[:-1].split('\t')
+    name, score, parents = recode.split('\t')
     return {
-      tokens[0]: tokens[1].split(',')
+      'name': name.strip(),
+      'score': int(score.strip()),
+      'parents': filter(None, parents.strip().split(','))
     }
 
   def encode(self, name, parents):

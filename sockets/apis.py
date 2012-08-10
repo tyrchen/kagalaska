@@ -2,7 +2,7 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-from services.handles import WordSeg, Graphical
+from sockets.handles import WordSeg, TagRelation
 
 class API(object):
   def parse_words(self, words):
@@ -10,5 +10,5 @@ class API(object):
     return handle.handle(words)
 
   def traverse(self, word):
-    handle = Graphical()
+    handle = TagRelation()
     return handle.handle(word)

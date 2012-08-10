@@ -1,4 +1,5 @@
 *.pyc
 .idea
 tests
-*.log
+logs/*.log
+tmp

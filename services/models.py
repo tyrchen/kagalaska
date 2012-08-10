@@ -3,7 +3,7 @@
 
 from __future__ import division, unicode_literals, print_function
 from mixin import Graphical, Mongoable
-from utils import TagFileHelper
+from utils import TagFileHelper, to_str
 
 class Tag(object, Mongoable, Graphical):
   indexes = [
@@ -17,19 +17,22 @@ class Tag(object, Mongoable, Graphical):
     return self.name
 
   def __repr__(self):
-    return self.name.encode('utf-8')
+    return to_str(self.name)
 
   def __init__(self, name, **kwargs):
     self.name = name
     self.__dict__.update(kwargs)
+
+  @property
+  def pk(self):
+    return self.name
 
   @classmethod
   def load_from_dict(cls):
     helper = TagFileHelper()
     tags = helper.load_from_file()
     for tag in tags:
-      name, parents = tag.popitem()
-      item = cls(name=name, parents=parents)
+      item = cls(name=tag['name'], score=tag['score'], parents=tag['parents'])
       item.save()
 
   @classmethod

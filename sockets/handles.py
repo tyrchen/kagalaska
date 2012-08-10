@@ -3,8 +3,10 @@
 
 from __future__ import division, unicode_literals, print_function
 from utils import to_str, to_unicode
-from const import UNIX_DOMAIN
+from const import WORDSEG_UNIX_DOMAIN, RELATIONS_UNIX_DOMAIN
+
 import socket
+import json
 
 receive_length = lambda str: len(str) * 10 if len(str) > 256 else 4096
 
@@ -42,12 +44,16 @@ class SocketProxy(object):
 
 class WordSeg(object):
   def handle(self, words):
-    sock = SocketProxy(UNIX_DOMAIN)
+    sock = SocketProxy(WORDSEG_UNIX_DOMAIN)
     return sock.process(words)
 
   def format(self, str_list):
     return to_unicode(str_list)
 
-class Graphical(object):
+class TagRelation(object):
   def handle(self, word):
-    pass
+    sock = SocketProxy(RELATIONS_UNIX_DOMAIN)
+    return sock.process(word)
+
+  def format(self, str_list):
+    return json.loads(str_list.decode('utf-8'))

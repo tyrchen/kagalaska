@@ -2,6 +2,6 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-from services.apis import API
+from sockets.apis import API
 
 __all__ = [API, ]

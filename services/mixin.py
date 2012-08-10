@@ -12,6 +12,10 @@ connection = pymongo.Connection(host=MONGO_HOST, port=MONGO_PORT)
 db = connection[MONGO_DB]
 
 class Mongoable:
+  @property
+  def pk(self):
+    raise NotImplemented
+
   def save(self):
     collection_name = self.__class__.__name__.lower()
 
@@ -24,7 +28,12 @@ class Mongoable:
       return True
 
   def update(self, **kwargs):
-    pass
+    collection_name = self.__class__.__name__.lower()
+
+    try:
+      db[collection_name].update({'name': self.pk}, {kwargs})
+    except Exception, err:
+      logger.info(err)
 
   @classmethod
   def objects(cls):
@@ -92,8 +101,9 @@ class Mongoable:
     except Exception, err:
       logger.info(err)
 
-  def delete_all(self):
-    collection_name = self.__class__.__name__.lower()
+  @classmethod
+  def delete_all(cls):
+    collection_name = cls.__name__.lower()
     db[collection_name].remove()
 
 class Graphical:

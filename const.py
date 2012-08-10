@@ -17,7 +17,8 @@ LOG_LEVEL = 'DEBUG'
 LOG_FORMATTER = '%(asctime)s %(levelname)s %(message)s'
 
 #UNIX_DOMAIN
-UNIX_DOMAIN = os.path.join(PROJECT_HOME, 'unix_domain')
+WORDSEG_UNIX_DOMAIN = os.path.join(PROJECT_HOME, 'wordseg_unix_domain')
+RELATIONS_UNIX_DOMAIN = os.path.join(PROJECT_HOME, 'relations_unix_domain')
 
 #MONGO_DB
 MONGO_HOST = 'localhost'

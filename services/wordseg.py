@@ -2,47 +2,80 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-from const import UNIX_DOMAIN
-from twisted.internet import protocol, reactor
+import mmseg as _mmseg
+from const import WORDS_PATH, CHARS_PATH
 from log import get_logger
-from relations.wordseg import BaseSeg
+from utils import to_str, to_unicode
 
 logger = get_logger()
 
-class WordSegService(object):
-  # Singleton instance to parse words
-  __instance = None
-  def __new__(cls, *args, **kwargs):
-    if not cls.__instance:
-      cls.__instance = super(WordSegService, cls).__new__(cls, *args, **kwargs)
-    return cls.__instance
+class Seg(object):
+  '''
+  Seg Words depends on different dic libraries
+  '''
 
-  def __init__(self):
-    self.seg = BaseSeg()
+  def __init__(self, words_path=WORDS_PATH, chars_path=CHARS_PATH):
+    self.seg = _mmseg
+    self.seg.Dictionary.dictionaries = (
+      ('chars', chars_path),
+      ('words', words_path),
+    )
+    self.seg.dict_load_defaults()
 
-  def parse(self, text):
-    return self.seg.parse(text)
+  def seg_txt(self, words):
+    if type(words) is str:
+      algor = self.seg.Algorithm(words)
+      for tok in algor:
+        yield tok.text
+    else:
+      yield ""
 
-class WordSegProtocol(protocol.Protocol):
-  def dataReceived(self, data):
-    results = self.factory.parse(data)
-    self.transport.write(results)
+class BaseSeg(object):
+  def __init__(self, words_path=WORDS_PATH, chars_path=CHARS_PATH):
+    self.seg = Seg(words_path, chars_path)
+    self.words_path = words_path if words_path else WORDS_PATH
+    self.keywords = {}
+    self._load()
 
-class WordSegFactory(protocol.Factory):
-  protocol = WordSegProtocol
+  def _load(self):
+    file = open(self.words_path, 'r')
+    lines = file.readlines()
+    file.close()
 
-  def __init__(self, service):
-    self.service = service
+    for line in lines:
+      line = to_unicode(line)
+      try:
+        tokens = line.split(' ')[1].strip()
+      except Exception, err:
+        logger.debug(err)
+        continue
+
+      self.add_keyword(tokens)
+
+  def is_keyword(self, word):
+    return self.keywords.has_key(word)
+
+  def add_keyword(self, word):
+    self.keywords.update({word: True})
 
   def parse(self, words):
-    return self.service.parse(words).encode('utf-8')
+    if not isinstance(words, basestring):
+      return []
 
-def start():
-  service = WordSegService()
+    results = []
 
-  print("Start WordSeg Service")
-  reactor.listenUNIX(UNIX_DOMAIN, WordSegFactory(service))
-  try:
-    reactor.run()
-  except Exception, err:
-    logger.info(err)
+    words = to_str(words)
+    for token in self.seg.seg_txt(words):
+      token = token.decode('utf-8')
+      if self.is_keyword(token):
+        results.append(token)
+
+    d = {}
+    for r in results:
+      if r in d:
+        d[r] += 1
+      else:
+        d[r] = 1
+
+    return ','.join(map(lambda item:item[0] + '__' + str(item[1]), d.items()))
+
