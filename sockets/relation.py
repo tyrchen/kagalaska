@@ -2,7 +2,7 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-from const import RELATIONS_UNIX_DOMAIN
+from settings import RELATIONS_UNIX_DOMAIN
 from twisted.internet import protocol, reactor
 from log import get_logger
 from services.manager import TagManager

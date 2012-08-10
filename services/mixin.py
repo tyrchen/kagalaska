@@ -3,7 +3,7 @@
 
 from __future__ import division, unicode_literals, print_function
 import pymongo
-from const import MONGO_DB, MONGO_HOST, MONGO_PORT
+from settings import MONGO_DB, MONGO_HOST, MONGO_PORT
 from log import get_logger
 
 logger = get_logger()

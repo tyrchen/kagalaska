@@ -2,7 +2,7 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-from const import RELATIONS_PATH
+from settings import RELATIONS_PATH
 
 def to_str(obj):
   if isinstance(obj, unicode):

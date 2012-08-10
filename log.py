@@ -2,7 +2,7 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-from const import LOG_FILE, LOG_LEVEL, LOG_FORMATTER
+from settings import LOG_FILE, LOG_LEVEL, LOG_FORMATTER
 
 def get_logger():
   import logging
