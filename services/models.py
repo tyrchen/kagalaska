@@ -55,3 +55,13 @@ class Tag(object, Mongoable, Graphical):
 
     for name in names:
       yield self.__class__.get_by_name(name)
+
+  def add_parents(self, parents, upsert=True):
+    self.update({'$addToSet': {'parents': {'$each': parents}}}, upsert=upsert)
+
+  def sub_parents(self, parents, upsert=True):
+    self.update({'$pullAll': {'parents': parents}}, upsert=upsert)
+
+  def reload(self):
+    instance = self.__class__.get_by_name(name=self.name)
+    self.__dict__ = instance.__dict__
