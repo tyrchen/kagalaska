@@ -27,11 +27,11 @@ class Mongoable:
     else:
       return True
 
-  def update(self, **kwargs):
+  def update(self, obj):
     collection_name = self.__class__.__name__.lower()
 
     try:
-      db[collection_name].update({'name': self.pk}, {kwargs})
+      db[collection_name].update({'name': self.pk}, obj, upsert=True)
     except Exception, err:
       logger.info(err)
 

@@ -6,6 +6,7 @@ from settings import WORDSEG_UNIX_DOMAIN
 from twisted.internet import protocol, reactor
 from log import get_logger
 from services.wordseg import BaseSeg
+from services.manager import TagManager
 
 logger = get_logger()
 
@@ -25,23 +26,39 @@ class WordSegService(object):
 
 class WordSegProtocol(protocol.Protocol):
   def dataReceived(self, data):
-    results = self.factory.parse(data)
-    self.transport.write(results)
+    items = self.factory.parse(data)
+
+    parents = []
+    for key, value in items:
+      d = self.factory.traverse(key)
+      for value in d.values():
+        parents.extend(value)
+
+    unique_parents = '__1,'.join(list(set(parents))) + '__1'
+    results = ','.join(map(lambda item:item[0] + '__' + str(item[1]), items)) + \
+      ',' + unique_parents
+
+    self.transport.write(results.encode('utf-8'))
 
 class WordSegFactory(protocol.Factory):
   protocol = WordSegProtocol
 
-  def __init__(self, service):
-    self.service = service
+  def __init__(self, wordseg, relations):
+    self.wordseg = wordseg
+    self.relations = relations
 
   def parse(self, words):
-    return self.service.parse(words).encode('utf-8')
+    return self.wordseg.parse(words)
+
+  def traverse(self, tag):
+    return self.relations.traverse(tag)
 
 def run():
-  service = WordSegService()
+  wordseg = WordSegService()
+  relations = TagManager()
 
   print("Start WordSeg Service")
-  reactor.listenUNIX(WORDSEG_UNIX_DOMAIN, WordSegFactory(service))
+  reactor.listenUNIX(WORDSEG_UNIX_DOMAIN, WordSegFactory(wordseg, relations))
   try:
     reactor.run()
   except Exception, err:

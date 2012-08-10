@@ -77,5 +77,5 @@ class BaseSeg(object):
       else:
         d[r] = 1
 
-    return ','.join(map(lambda item:item[0] + '__' + str(item[1]), d.items()))
+    return d.items()
 
