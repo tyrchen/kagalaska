@@ -7,7 +7,7 @@ from sockets.relation import run as relations
 
 patterns = {
   'wordseg': wordseg,
-  'services': relations
+  'relations': relations
 }
 help = "args list: %r" %patterns.keys()
 
