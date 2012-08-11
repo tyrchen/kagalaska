@@ -58,7 +58,7 @@ class BaseSeg(object):
   def add_keyword(self, word):
     self.keywords.update({word: True})
 
-  def parse(self, words):
+  def parse(self, words, weight=1):
     if not isinstance(words, basestring):
       return []
 
@@ -73,9 +73,9 @@ class BaseSeg(object):
     d = {}
     for r in results:
       if r in d:
-        d[r] += 1
+        d[r] += weight
       else:
-        d[r] = 1
+        d[r] = weight
 
-    return d.items()
+    return d
 
