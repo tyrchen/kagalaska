@@ -3,7 +3,7 @@
 
 from __future__ import division, unicode_literals, print_function
 import mmseg as _mmseg
-from const import WORDS_PATH, CHARS_PATH
+from settings import WORDS_PATH, CHARS_PATH
 from log import get_logger
 from utils import to_str, to_unicode
 
