@@ -1,4 +1,5 @@
 # Django settings for kagalaska project.
+import os
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
@@ -122,8 +123,27 @@ INSTALLED_APPS = (
     # 'django.contrib.admin',
     # Uncomment the next line to enable admin documentation:
     # 'django.contrib.admindocs',
-    'kagalaska',
+    'tag'
 )
+
+# Tag APP
+TMP_HOME = '/tmp/'
+PROJECT_HOME = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
+
+# DATA PATH
+WORDS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'words.dic')
+CHARS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'chars.dic')
+RELATIONS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'relations')
+
+#UNIX_DOMAIN
+WORDSEG_UNIX_DOMAIN = os.path.join(TMP_HOME, 'wordseg.sock')
+RELATIONS_UNIX_DOMAIN = os.path.join(TMP_HOME, 'relation.sock')
+
+#MONGO_DB
+MONGO_HOST = 'localhost'
+MONGO_PORT = 27017
+MONGO_DB = 'kagalaska'
+
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to

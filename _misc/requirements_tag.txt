@@ -1,0 +1,4 @@
+twisted
+pymongo
+-e git+git://github.com/pluskid/pymmseg-cpp.git#egg=pymmseg
+django
