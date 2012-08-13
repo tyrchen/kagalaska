@@ -14,9 +14,9 @@ WORDS_PATH = settings.WORDS_PATH
 CHARS_PATH = settings.CHARS_PATH
 
 class Seg(object):
-  '''
+  """
   Seg Words depends on different dic libraries
-  '''
+  """
 
   def __init__(self, words_path=WORDS_PATH, chars_path=CHARS_PATH):
     self.seg = _mmseg
@@ -31,8 +31,8 @@ class Seg(object):
       algor = self.seg.Algorithm(words)
       for tok in algor:
         yield tok.text
-    else:
-      yield ""
+
+    raise StopIteration
 
 class BaseSeg(object):
   def __init__(self, words_path=WORDS_PATH, chars_path=CHARS_PATH):

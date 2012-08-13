@@ -5,6 +5,11 @@ from __future__ import division, unicode_literals, print_function
 list_nothing = lambda *args, **kwargs: []
 
 def merge_dicts(to_obj, from_obj, weight=1):
+  """
+  merge list or dict to a dict
+  {'a': 1} {'a': 2, 'b': 1}
+  ===> {'a': 3, 'b': 1}
+  """
   if isinstance(from_obj, list):
     from_obj = dict.fromkeys(from_obj, weight)
 
@@ -42,6 +47,14 @@ class TagRank(object):
     self.imagine_weight = imagine_weight
 
   def traverse(self, tag):
+    """
+    traverse a tag
+    traverse(u'北京') ===> {
+    u'北京': [u'中国', u'城市'],
+    u'中国': [u'亚洲']
+    }
+
+    """
     return self.traverse_func(tag)
 
   def parse(self, content, weight):
@@ -57,6 +70,10 @@ class TagRank(object):
     return results
 
   def rank_obj(self, obj):
+    """
+    Algorithm of rank obj.
+
+    """
     content = obj.get('content', '')
     weight = float(obj.get('weight', 0))
 
@@ -66,8 +83,8 @@ class TagRank(object):
       return d
 
     import copy
-
     results = copy.deepcopy(d)
+
     for key in d:
       data = self.traverse(key)
       imagine_weight = self.imagine_weight
