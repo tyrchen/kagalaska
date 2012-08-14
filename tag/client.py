@@ -74,7 +74,7 @@ class SocketProxy(object):
     return self.format_fun(response_str)
 
 class API(object):
-  def parse_words(self, title=None, content=None):
+  def parse_words(self, title=None, content=None, imagine=True):
     def format(str_list):
       if not str_list:
         return ''
@@ -82,7 +82,7 @@ class API(object):
       return json.loads(str_list.decode('utf-8'))
 
     sock = SocketProxy(connect_to=WORDSEG_UNIX_DOMAIN, func=format)
-    return sock.process({'title': title, 'content': content})
+    return sock.process({'title': title, 'content': content, 'imagine': imagine})
 
   def traverse(self, word):
     def format(str_list):

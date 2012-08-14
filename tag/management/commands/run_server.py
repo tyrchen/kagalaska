@@ -15,13 +15,12 @@ help = "args list: %r" %patterns.keys()
 class Command(BaseCommand):
 
   def handle(self, *args, **options):
-    import sys
-    if len(sys.argv) < 2:
+    if len(args) < 1:
       print(u'需要参数')
       print(help)
       exit(1)
 
-    args = sys.argv[1]
+    args = args[0]
 
     if args not in patterns:
       print(u'参数不合法')

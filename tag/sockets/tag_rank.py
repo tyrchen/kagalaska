@@ -49,8 +49,10 @@ class WordSegProtocol(protocol.Protocol):
       {'content': json_data['title'], 'weight': 3},
       {'content': json_data['content'], 'weight': 1}
     ]
+    imagine = json_data.get('imagine', True)
     rank = TagRank(objs, traverse_func=self.factory.traverse,
-                   seg_func=self.factory.parse)
+                   seg_func=self.factory.parse, imagine=imagine)
+    
     results = rank.rank()
 
     self.transport.write(json.dumps(results).encode('utf-8'))
