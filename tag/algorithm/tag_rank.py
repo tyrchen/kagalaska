@@ -67,7 +67,23 @@ class TagRank(object):
       d = self.rank_obj(obj)
       merge_dicts(results, d)
 
-    return results
+    threshold = 0.06
+    total = 0
+    for value in results.values():
+      total += value
+
+    show = {}
+    hide = {}
+    for key in results:
+      if results[key]/total >= threshold:
+        show[key] = results[key]
+      else:
+        hide[key] = results[key]
+        
+    return {
+      'show': show,
+      'hide': hide,
+    }
 
   def rank_obj(self, obj):
     """
@@ -91,10 +107,11 @@ class TagRank(object):
       if not data.has_key(key):
         continue
 
+      value = d.get(key, 1)
       parents = data.pop(key)
       merge_dicts(results, parents, weight=imagine_weight)
 
       for remain in data:
-        merge_dicts(results, data[remain], imagine_weight - 0.2)
+        merge_dicts(results, data[remain], imagine_weight-0.2)
 
     return results

@@ -20,16 +20,24 @@ def to_unicode(obj):
     return obj
 
 class TagFileHelper(object):
-  def __init__(self, path=settings.RELATIONS_PATH):
-    self.path = path
-
   def load_from_file(self):
-    file = open(self.path, 'r')
+    path = settings.RELATIONS_PATH
+    file = open(path, 'r')
     lines = file.readlines()
     file.close()
 
     for line in lines:
       yield self.decode(line)
+
+  def load_relations(self):
+    path = settings.TRAIN_RATE_PATH
+    file = open(path, 'r')
+    lines = file.readlines()
+    file.close()
+
+    for line in lines:
+      tokens = line.decode('utf-8').split('\t')
+      yield (tokens[0].strip(), float(tokens[1].strip()))
 
   def to_file(self, name, parents):
     import codecs

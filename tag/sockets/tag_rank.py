@@ -46,7 +46,7 @@ class WordSegProtocol(protocol.Protocol):
   def dataReceived(self, data):
     json_data = json.loads(data.decode('utf-8'))
     objs = [
-      {'content': json_data['title'], 'weight': 3},
+      {'content': json_data['title'], 'weight': 1.5},
       {'content': json_data['content'], 'weight': 1}
     ]
     imagine = json_data.get('imagine', True)
@@ -54,7 +54,6 @@ class WordSegProtocol(protocol.Protocol):
                    seg_func=self.factory.parse, imagine=imagine)
     
     results = rank.rank()
-
     self.transport.write(json.dumps(results).encode('utf-8'))
 
 class WordSegFactory(protocol.Factory):

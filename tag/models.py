@@ -5,6 +5,8 @@ from __future__ import division, unicode_literals, print_function
 from tag.mixin import Graphical, Mongoable
 from tag.utils import TagFileHelper, to_str
 
+from django.conf import settings
+
 class Tag(object, Mongoable, Graphical):
   indexes = [
       ({'name': 1}, {'unique': True})
@@ -28,12 +30,23 @@ class Tag(object, Mongoable, Graphical):
     return self.name
 
   @classmethod
+  def load(cls):
+    cls.load_relations()
+
+  @classmethod
   def load_from_dict(cls):
     helper = TagFileHelper()
     tags = helper.load_from_file()
     for tag in tags:
       item = cls(name=tag['name'], score=tag['score'], parents=tag['parents'])
       item.save()
+
+  @classmethod
+  def load_relations(cls):
+    helper = TagFileHelper()
+    tags = helper.load_relations()
+    for name, score in tags:
+      cls.cls_set_score(name, score)
 
   @classmethod
   def get_by_name(cls, name, json_format=False):
@@ -43,8 +56,9 @@ class Tag(object, Mongoable, Graphical):
     if not json_data:
       return None
 
+    del json_data['_id']
     if not json_format:
-      return Tag(name=json_data['name'], parents=json_data['parents'])
+      return Tag(**json_data)
     return json_data
 
   def to_dict(self):
@@ -62,9 +76,28 @@ class Tag(object, Mongoable, Graphical):
   def sub_parents(self, parents, upsert=True):
     self.update({'$pullAll': {'parents': parents}}, upsert=upsert)
 
+  def set_score(self, score=1.0, upsert=True):
+    self.update({'$set': {'score': score}}, upsert)
+
+  @classmethod
+  def cls_set_score(cls, name, score=1.0, upsert=True):
+    cls.cls_update(name=name, obj={'$set': {'score': score}}, upsert=upsert)
+
   def reload(self):
     instance = self.__class__.get_by_name(name=self.name)
     self.__dict__ = instance.__dict__
+
+  @classmethod
+  def cls_to_rate(cls, default=6):
+    path = settings.WORDS_RATE_PATH
+    file = open(path, 'a')
+    objs = cls.objects()
+    for obj in objs:
+      name = obj.name
+      score = obj.score if obj.score != 1 else default
+      line = '%s\t%.4f\n' %(name, score)
+      file.write(line.encode('utf-8'))
+    file.close()
 
 class TagManager(object):
   def __init__(self):

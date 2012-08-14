@@ -12,6 +12,7 @@ logger = logging.getLogger()
 
 WORDS_PATH = settings.WORDS_PATH
 CHARS_PATH = settings.CHARS_PATH
+RATE_PATH = settings.WORDS_RATE_PATH
 
 class Seg(object):
   """
@@ -42,25 +43,25 @@ class BaseSeg(object):
     self._load()
 
   def _load(self):
-    file = open(self.words_path, 'r')
+    file = open(settings.WORDS_RATE_PATH, 'r')
     lines = file.readlines()
     file.close()
 
     for line in lines:
       line = to_unicode(line)
       try:
-        tokens = line.split(' ')[1].strip()
+        name, score = line.split('\t')
       except Exception, err:
         logger.debug(err)
         continue
 
-      self.add_keyword(tokens)
+      self.add_keyword(name.strip(), float(score.strip()))
 
   def is_keyword(self, word):
     return self.keywords.has_key(word)
 
-  def add_keyword(self, word):
-    self.keywords.update({word: True})
+  def add_keyword(self, word, score=1.0):
+    self.keywords.update({word: score})
 
   def parse(self, words, weight=1):
     if not isinstance(words, basestring):
@@ -77,9 +78,9 @@ class BaseSeg(object):
     d = {}
     for r in results:
       if r in d:
-        d[r] += weight
+        d[r] += weight * self.keywords.get(r, 1)
       else:
-        d[r] = weight
+        d[r] = weight * self.keywords.get(r, 1)
 
     return d
 

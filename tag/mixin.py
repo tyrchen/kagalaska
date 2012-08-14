@@ -37,6 +37,15 @@ class Mongoable:
       logger.info(err)
 
   @classmethod
+  def cls_update(cls, name, obj, upsert=True):
+    collection_name = cls.__name__.lower()
+
+    try:
+      db[collection_name].update({'name': name}, obj, upsert=upsert)
+    except Exception, err:
+      logger.info(err)
+
+  @classmethod
   def objects(cls):
     collection_name = cls.__name__.lower()
     all = db[collection_name].find()
@@ -44,10 +53,8 @@ class Mongoable:
       raise StopIteration
 
     for item in all:
-      name = item.pop('name')
-      id = str(item.pop('_id'))
-      item.update(id=id)
-      yield cls(name=name, **item)
+      del item['_id']
+      yield cls(**item)
 
   @classmethod
   def get_one_query(cls, query):

@@ -134,6 +134,8 @@ PROJECT_HOME = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
 WORDS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'words.dic')
 CHARS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'chars.dic')
 RELATIONS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'relations')
+TRAIN_RATE_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'tag_rate_train.dic')
+WORDS_RATE_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'words_rate.dic')
 
 #UNIX_DOMAIN
 WORDSEG_UNIX_DOMAIN = os.path.join(TMP_HOME, 'wordseg.sock')
