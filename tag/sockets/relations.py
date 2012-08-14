@@ -24,8 +24,10 @@ class RelationFactory(protocol.Factory):
   def __init__(self, service):
     self.service = service
 
-  def traverse(self, words):
-    words = words.decode('utf-8')
+  def traverse(self, data):
+    json_data =json.loads(data.decode('utf-8'))
+
+    words = json_data['words']
     return json.dumps(self.service.traverse(words)).encode('utf-8')
 
 def run():

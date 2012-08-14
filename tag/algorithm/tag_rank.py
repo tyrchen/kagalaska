@@ -78,7 +78,6 @@ class TagRank(object):
     weight = float(obj.get('weight', 0))
 
     d = self.parse(content=content, weight=weight)
-
     if not self.imagine:
       return d
 

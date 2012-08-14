@@ -3,3 +3,5 @@
 tests
 logs/*.log
 tmp
+src
+build
