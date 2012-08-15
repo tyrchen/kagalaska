@@ -45,11 +45,14 @@ class TraverseService(object):
 class WordSegProtocol(protocol.Protocol):
   def dataReceived(self, data):
     json_data = json.loads(data.decode('utf-8'))
+    extra = json_data.get('extra', [])
     objs = [
       {'content': json_data['title'], 'weight': 1.5},
       {'content': json_data['content'], 'weight': 1}
     ]
+    objs.extend(extra)
     imagine = json_data.get('imagine', True)
+
     rank = TagRank(objs, traverse_func=self.factory.traverse,
                    seg_func=self.factory.parse, imagine=imagine)
     
