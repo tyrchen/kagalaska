@@ -4,6 +4,9 @@
 from __future__ import division, unicode_literals, print_function
 list_nothing = lambda *args, **kwargs: []
 
+DEFAUTL_IMAGEINE_WEIGHT = 0.3
+
+
 def merge_dicts(to_obj, from_obj, weight=1):
   """
   merge list or dict to a dict
@@ -39,7 +42,7 @@ class TagRank(object):
   """
 
   def __init__(self, objs, traverse_func=list_nothing, seg_func = list_nothing,
-               imagine=True, imagine_weight=0.5):
+               imagine=True, imagine_weight=DEFAUTL_IMAGEINE_WEIGHT):
     self.objs = objs
     self.imagine = imagine
     self.seg_func = seg_func
@@ -107,11 +110,10 @@ class TagRank(object):
       if not data.has_key(key):
         continue
 
-      value = d.get(key, 1)
       parents = data.pop(key)
-      merge_dicts(results, parents, weight=imagine_weight)
+      merge_dicts(results, parents, weight=DEFAUTL_IMAGEINE_WEIGHT)
 
       for remain in data:
-        merge_dicts(results, data[remain], imagine_weight-0.2)
+        merge_dicts(results, data[remain], DEFAUTL_IMAGEINE_WEIGHT*DEFAUTL_IMAGEINE_WEIGHT)
 
     return results
