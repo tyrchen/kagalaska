@@ -63,7 +63,7 @@ class BaseSeg(object):
   def add_keyword(self, word, score=1.0):
     self.keywords.update({word: score})
 
-  def parse(self, words, weight=1):
+  def parse(self, words, weight=1, TF_IDF=True):
     if not isinstance(words, basestring):
       return []
 
@@ -78,9 +78,9 @@ class BaseSeg(object):
     d = {}
     for r in results:
       if r in d:
-        d[r] += weight * self.keywords.get(r, 1)
+        d[r] += weight * self.keywords.get(r, 1) if TF_IDF else weight
       else:
-        d[r] = weight * self.keywords.get(r, 1)
+        d[r] = weight * self.keywords.get(r, 1) if TF_IDF else weight
 
     return d
 

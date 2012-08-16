@@ -42,12 +42,13 @@ class TagRank(object):
   """
 
   def __init__(self, objs, traverse_func=list_nothing, seg_func = list_nothing,
-               imagine=True, imagine_weight=DEFAUTL_IMAGEINE_WEIGHT):
+               imagine=True, imagine_weight=DEFAUTL_IMAGEINE_WEIGHT, TF_IDF=True):
     self.objs = objs
     self.imagine = imagine
     self.seg_func = seg_func
     self.traverse_func = traverse_func
     self.imagine_weight = imagine_weight
+    self.TF_IDF =TF_IDF
 
   def traverse(self, tag):
     """
@@ -60,8 +61,8 @@ class TagRank(object):
     """
     return self.traverse_func(tag)
 
-  def parse(self, content, weight):
-    return self.seg_func(content, weight)
+  def parse(self, content, weight, TF_IDF=True):
+    return self.seg_func(content, weight, self.TF_IDF)
 
   def rank(self):
     results = {}

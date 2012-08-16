@@ -26,8 +26,8 @@ class WordSegService(object):
   def __init__(self):
     self.seg = BaseSeg()
 
-  def parse(self, text, weight=1):
-    return self.seg.parse(text, weight=weight)
+  def parse(self, text, weight=1, TF_IDF=True):
+    return self.seg.parse(text, weight=weight, TF_IDF=TF_IDF)
 
 class TraverseService(object):
   __instance = None
@@ -52,9 +52,11 @@ class WordSegProtocol(protocol.Protocol):
     ]
     objs.extend(extra)
     imagine = json_data.get('imagine', True)
+    TF_IDF = json_data.get('TF_IDF', True)
 
     rank = TagRank(objs, traverse_func=self.factory.traverse,
-                   seg_func=self.factory.parse, imagine=imagine)
+                   seg_func=self.factory.parse, imagine=imagine,
+                   TF_IDF=TF_IDF)
     
     results = rank.rank()
     self.transport.write(json.dumps(results).encode('utf-8'))
@@ -66,8 +68,8 @@ class WordSegFactory(protocol.Factory):
     self.wordseg = wordseg
     self.relations = relations
 
-  def parse(self, words, weight=1):
-    return self.wordseg.parse(words, weight=weight)
+  def parse(self, words, weight=1, TF_IDF=True):
+    return self.wordseg.parse(words, weight=weight, TF_IDF=TF_IDF)
 
   def traverse(self, tag):
     return self.relations.traverse(tag)
