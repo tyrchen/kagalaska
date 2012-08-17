@@ -128,7 +128,7 @@ INSTALLED_APPS = (
 
 # Tag APP
 PROJECT_HOME = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
-TMP_HOME = PROJECT_HOME
+TMP_HOME = '/var/run/'
 
 # DATA PATH
 WORDS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'words.dic')
