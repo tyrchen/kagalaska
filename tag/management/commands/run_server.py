@@ -5,10 +5,12 @@ from __future__ import division, unicode_literals, print_function
 from django.core.management.base import BaseCommand
 from tag import run_tag_rank
 from tag import run_relations
+from tag import run_place_info
 
 patterns = {
   'wordseg': run_tag_rank,
-  'relations': run_relations
+  'relations': run_relations,
+  'place_info': run_place_info
 }
 help = "args list: %r" %patterns.keys()
 

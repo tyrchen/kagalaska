@@ -57,11 +57,15 @@ class Mongoable:
       yield cls(**item)
 
   @classmethod
-  def get_one_query(cls, query):
+  def get_one_query(cls, query, only=[]):
+    restrict = dict.fromkeys(only, 1)
     collection_name = cls.__name__.lower()
 
     try:
-      json_data = db[collection_name].find_one(query)
+      if not restrict:
+        json_data = db[collection_name].find_one(query)
+      else:
+        json_data = db[collection_name].find_one(query, restrict)
     except Exception, err:
       logger.info(err)
       return None
@@ -69,11 +73,15 @@ class Mongoable:
       return json_data
 
   @classmethod
-  def get_by_query(cls, query):
+  def get_by_query(cls, query, only=[]):
+    restrict = dict.fromkeys(only, 1)
     collection_name = cls.__name__.lower()
 
     try:
-      clusters = db[collection_name].find(query)
+      if not restrict:
+        clusters = db[collection_name].find(query)
+      else:
+        clusters = db[collection_name].find(query, restrict)
     except Exception, err:
       logger.info(err)
       return None
@@ -118,6 +126,9 @@ class Graphical:
   def traverse(self):
     d = {}
     nodes = self.next_nodes()
+    if not nodes:
+      return {self: []}
+    
     d.update({self: self.next_nodes()})
 
     for p in nodes:

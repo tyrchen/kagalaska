@@ -1,6 +1,28 @@
 # Django settings for kagalaska project.
 import os
 
+# Tag APP
+PROJECT_HOME = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
+TMP_HOME = '/var/run/'
+DATA_PATH = os.path.join(PROJECT_HOME, 'tag', 'data')
+
+# DATA PATH
+WORDS_PATH = os.path.join(DATA_PATH, 'words.dic')
+CHARS_PATH = os.path.join(DATA_PATH, 'chars.dic')
+RELATIONS_PATH = os.path.join(DATA_PATH, 'relations')
+TRAIN_RATE_PATH = os.path.join(DATA_PATH, 'tag_rate_train.dic')
+WORDS_RATE_PATH = os.path.join(DATA_PATH, 'words_rate.dic')
+
+#UNIX_DOMAIN
+WORDSEG_UNIX_DOMAIN = os.path.join(TMP_HOME, 'wordseg.sock')
+RELATIONS_UNIX_DOMAIN = os.path.join(TMP_HOME, 'relations.sock')
+PLACEINFO_UNIX_DOMAIN = os.path.join(TMP_HOME, 'place_info.sock')
+
+#MONGO_DB
+MONGO_HOST = 'localhost'
+MONGO_PORT = 27017
+MONGO_DB = 'kagalaska'
+
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG
 
@@ -125,27 +147,6 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     'tag'
 )
-
-# Tag APP
-PROJECT_HOME = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
-TMP_HOME = '/var/run/'
-
-# DATA PATH
-WORDS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'words.dic')
-CHARS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'chars.dic')
-RELATIONS_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'relations')
-TRAIN_RATE_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'tag_rate_train.dic')
-WORDS_RATE_PATH = os.path.join(PROJECT_HOME, 'tag', 'data', 'words_rate.dic')
-
-#UNIX_DOMAIN
-WORDSEG_UNIX_DOMAIN = os.path.join(TMP_HOME, 'wordseg.sock')
-RELATIONS_UNIX_DOMAIN = os.path.join(TMP_HOME, 'relation.sock')
-
-#MONGO_DB
-MONGO_HOST = 'localhost'
-MONGO_PORT = 27017
-MONGO_DB = 'kagalaska'
-
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
