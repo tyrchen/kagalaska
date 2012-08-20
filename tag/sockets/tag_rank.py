@@ -20,27 +20,18 @@ class WordSegService(object):
   __instance = None
   def __new__(cls, *args, **kwargs):
     if not cls.__instance:
-      cls.__instance = super(WordSegService, cls).__new__(cls, *args, **kwargs)
+      cls.__instance = BaseSeg()
     return cls.__instance
 
   def __init__(self):
     self.seg = BaseSeg()
 
-  def parse(self, text, weight=1, TF_IDF=True):
-    return self.seg.parse(text, weight=weight, TF_IDF=TF_IDF)
-
 class TraverseService(object):
   __instance = None
   def __new__(cls, *args, **kwargs):
     if not cls.__instance:
-      cls.__instance = super(TraverseService, cls).__new__(cls, *args, **kwargs)
+      cls.__instance = TagManager()
     return cls.__instance
-
-  def __init__(self):
-    self.manager = TagManager()
-
-  def traverse(self, tag):
-    return self.manager.traverse(tag)
 
 class WordSegProtocol(protocol.Protocol):
   def dataReceived(self, data):
@@ -54,8 +45,8 @@ class WordSegProtocol(protocol.Protocol):
     imagine = json_data.get('imagine', True)
     TF_IDF = json_data.get('TF_IDF', True)
 
-    rank = TagRank(objs, traverse_func=self.factory.traverse,
-                   seg_func=self.factory.parse, imagine=imagine,
+    rank = TagRank(objs, tag_manager=self.factory.relations,
+                   wordseg=self.factory.wordseg, imagine=imagine,
                    TF_IDF=TF_IDF)
     
     results = rank.rank()

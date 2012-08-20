@@ -2,6 +2,9 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
+
+import copy
+
 list_nothing = lambda *args, **kwargs: []
 
 DEFAUTL_IMAGEINE_WEIGHT = 0.3
@@ -41,12 +44,12 @@ class TagRank(object):
   @return {'天安门': 6, '北京': 5}
   """
 
-  def __init__(self, objs, traverse_func=list_nothing, seg_func = list_nothing,
-               imagine=True, imagine_weight=DEFAUTL_IMAGEINE_WEIGHT, TF_IDF=True):
+  def __init__(self, objs, tag_manager, wordseg, imagine=True,
+               imagine_weight=DEFAUTL_IMAGEINE_WEIGHT, TF_IDF=True):
     self.objs = objs
     self.imagine = imagine
-    self.seg_func = seg_func
-    self.traverse_func = traverse_func
+    self.tag_manager = tag_manager
+    self.wordseg = wordseg
     self.imagine_weight = imagine_weight
     self.TF_IDF =TF_IDF
 
@@ -59,10 +62,10 @@ class TagRank(object):
     }
 
     """
-    return self.traverse_func(tag)
+    return self.tag_manager.traverse(tag)
 
   def parse(self, content, weight, TF_IDF=True):
-    return self.seg_func(content, weight, self.TF_IDF)
+    return self.wordseg.parse(content, weight, self.TF_IDF)
 
   def rank(self):
     results = {}
@@ -83,10 +86,12 @@ class TagRank(object):
         show[key] = results[key]
       else:
         hide[key] = results[key]
-        
+
+    cities = self.tag_manager.city_clusters(show.items())
     return {
       'show': show,
       'hide': hide,
+      'cities': cities
     }
 
   def rank_obj(self, obj):
@@ -101,7 +106,6 @@ class TagRank(object):
     if not self.imagine:
       return d
 
-    import copy
     results = copy.deepcopy(d)
 
     for key in d:

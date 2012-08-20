@@ -3,14 +3,25 @@
 
 from __future__ import division, unicode_literals, print_function
 from tag.mixin import Graphical, Mongoable
-from tag.utils import TagFileHelper, to_str
-
+from tag.utils import to_str
 from django.conf import settings
+from exceptions import NotExistsException, MongoDBHandleException
+from validate import item_exists, item_in
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 class Place(object, Mongoable):
   indexes = [
      ({'slug': 1}, {'unique': True})
   ]
+
+  ONLY_MAPPING = {
+    'ONLY_SLUG': ['slug', ],
+    'ONLY_USEFUL': ['slug', 'name_zh', 'name_en', 'class', 'centroid', 'parent_slug'],
+    'ALL': []
+  }
 
   def __init__(self, slug, **kwargs):
     self.slug = slug
@@ -21,27 +32,30 @@ class Place(object, Mongoable):
     return self.slug
 
   @classmethod
-  def get_by_slug(cls, slug, only_slug=False, json_format=False):
-    only = [] if not only_slug else ['slug', ]
-
+  def get_by_slug(cls, slug, only=ONLY_MAPPING['ONLY_USEFUL'], json_format=False):
+    only = only
     query = {'slug': slug}
-    json_data = cls.get_one_query(query, only=only)
 
-    if not json_data:
-      if json_format:
-        return {}
+    try:
+      json_data = cls.get_one_query(query, only=only)
+      
+    except (NotExistsException, MongoDBHandleException):
+      return None
+    except Exception, e:
+      logger.info(e)
+      return None
+
+    else:
+      if not json_format:
+        return Place(**json_data)
       else:
-        return None
-
-    del json_data['_id']
-    if not json_format:
-      return Place(**json_data)
-    return json_data
+        return json_data
 
   def get_parent(self):
     if self.__dict__.has_key('parent_slug'):
       return self.__class__.get_by_slug(self.__dict__['parent_slug'])
-    return None
+    else:
+      return None
 
   def to_dict(self):
     return vars(self)
@@ -62,17 +76,21 @@ class Normal(object, Mongoable):
   @classmethod
   def get_by_slug(cls, slug, only_slug=False, json_format=False):
     only = [] if not only_slug else ['slug', ]
-
     query = {'slug': slug}
-    json_data = cls.get_one_query(query, only=only)
 
-    if not json_data:
+    try:
+      json_data = cls.get_one_query(query, only=only)
+
+    except (NotExistsException, MongoDBHandleException):
       return None
+    except Exception, e:
+      logger.info(e)
 
-    del json_data['_id']
-    if not json_format:
-      return Normal(**json_data)
-    return json_data
+    else:
+      if not json_format:
+        return Normal(**json_data)
+      else:
+        return json_data
 
 class Tag(object, Mongoable, Graphical):
   """
@@ -127,53 +145,71 @@ class Tag(object, Mongoable, Graphical):
   @classmethod
   def get_by_name(cls, name, json_format=False):
     query = {'name': name}
-    json_data = cls.get_one_query(query)
 
-    if not json_data:
+    try:
+      json_data = cls.get_one_query(query)
+    except (NotExistsException, MongoDBHandleException):
+      return None
+    except Exception, e:
+      logger(e)
       return None
 
-    del json_data['_id']
-    if not json_format:
-      return Tag(**json_data)
-    return json_data
+    else:
+      if not json_format:
+        return Tag(**json_data)
+      else:
+        return json_data
 
   @classmethod
   def cls_to_rate(cls, default=6):
     path = settings.WORDS_RATE_PATH
     file = open(path, 'a')
+    
     objs = cls.objects()
     for obj in objs:
       name = obj.name
       score = obj.score if obj.score != 1 else default
       line = '%s\t%.4f\n' %(name, score)
       file.write(line.encode('utf-8'))
+
     file.close()
 
   def to_dict(self):
     return vars(self)
 
   def next_nodes(self):
-    names = getattr(self, 'parents', None)
-    if not names:
+    try:
+      names = self.parents
+    except Exception, e:
+      logger.info(e)
       return []
 
-    objs = []
-    for name in names:
-      obj = self.__class__.get_by_name(name)
-      if not obj:
-        continue
-      objs.append(obj)
-      
-    return objs
+    else:
+      nodes = []
+      for name in names:
+        node = self.__class__.get_by_name(name)
+        if not node:
+          continue
+        nodes.append(node)
+      return nodes
 
   def add_parents(self, parents, upsert=True):
-    self.update({'$addToSet': {'parents': {'$each': parents}}}, upsert=upsert)
+    try:
+      self.update({'$addToSet': {'parents': {'$each': parents}}}, upsert=upsert)
+    except Exception:
+      pass
 
   def sub_parents(self, parents, upsert=True):
-    self.update({'$pullAll': {'parents': parents}}, upsert=upsert)
+    try:
+      self.update({'$pullAll': {'parents': parents}}, upsert=upsert)
+    except Exception:
+      pass
 
   def set_score(self, score=1.0, upsert=True):
-    self.update({'$set': {'score': score}}, upsert)
+    try:
+      self.update({'$set': {'score': score}}, upsert)
+    except Exception:
+      pass
 
   def reload(self):
     instance = self.__class__.get_by_name(name=self.name)
@@ -188,9 +224,9 @@ class Tag(object, Mongoable, Graphical):
     for item in self.items:
       handle = self.mapping.get(item['class'], Normal)
       if handle is Place:
-        places.append(handle.get_by_slug(item['slug']))
+        places.append(handle.get_by_slug(item['slug'], only=['slug', 'class'], json_format=True))
       else:
-        others.append(handle.get_by_slug(item['slug']))
+        others.append(handle.get_by_slug(item['slug'], only=['slug', 'class'], json_format=True))
     return {
       'places': places,
       'others': others
@@ -198,19 +234,41 @@ class Tag(object, Mongoable, Graphical):
 
 class TagManager(object):
   def __init__(self):
-    self.dict = {}
+    self.tags = {}
+    self.items = {}
     self.to_cache()
 
   def to_cache(self):
     for tag in Tag.objects():
       name = tag.name
       parents = getattr(tag, 'parents', [])
-      self.dict.update({
-        name: parents
+      items = tag.get_items()['places']
+      self.tags.update({
+        name: {
+          'parents': parents,
+          'items': items
+        }
       })
 
+      for item in items:
+        if not item['class'] in Tag.mapping:
+          continue
+
+        if self.has_slug(item['slug']):
+          continue
+
+        obj = Place.get_by_slug(item['slug'], json_format=True)
+        if not obj:
+          continue
+
+        slug = obj.get('slug', '')
+        if not slug:
+          continue
+
+        self.items.update({slug: obj})
+
   def has_tag(self, name):
-    return self.dict.has_key(name)
+    return self.tags.has_key(name)
 
   def traverse(self, name):
     d = {}
@@ -234,7 +292,74 @@ class TagManager(object):
     return d
 
   def parents(self, name):
-    return self.dict.get(name, [])
+    item = self.tags.get(name, [])
+    if not item:
+      return []
 
+    parents = item.get('parents', [])
+    return parents
 
-  
+  def has_slug(self, slug):
+    return self.items.has_key(slug)
+
+  def get_item(self, slug):
+    return self.items.get(slug, {})
+
+  def city_clusters(self, tags):
+    d = {}
+    for name, weight in tags:
+      cities = self.tag_cities(name, weight)
+      for city in cities:
+        for name in city:
+          if name not in d:
+            d.update(city)
+          else:
+            d[name]['score'] += city[name]['score']
+    return d
+
+  def tag_cities(self, name, weight=1.0):
+    if not self.has_tag(name):
+      return []
+
+    cities = []
+    items = self.tags[name]['items']
+    for item in items:
+      city = self.item_city(item)
+      if not city:
+        continue
+        
+      else:
+        d = {
+          city['slug']: {
+              'name': city['name_zh'],
+              'slug': city['slug'],
+              'score': weight
+          }
+        }
+        cities.append(d)
+        
+    return cities 
+
+  def item_city(self, item):
+    if item['class'] == 'PLACE':
+      try:
+        item = self.get_item(item['slug'])
+        parent_slug = item.get('parent_slug', '')
+        parent = self.get_item(parent_slug)
+      except Exception:
+        return {}
+
+      else:
+        return parent
+
+    elif item['class'] == 'AREA':
+      try:
+        item = self.get_item(item['slug'])
+      except Exception:
+        return {}
+
+      else:
+        return item
+
+    else:
+      return {}

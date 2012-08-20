@@ -2,9 +2,10 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-import pymongo
 from django.conf import settings
+from exceptions import NotExistsException, MongoDBHandleException
 
+import pymongo
 import logging
 
 logger = logging.getLogger(__name__)
@@ -24,7 +25,7 @@ class Mongoable:
       db[collection_name].insert(self.__dict__)
     except Exception, err:
       logger.info(err)
-      return False
+      raise MongoDBHandleException('On Save')
     else:
       return True
 
@@ -35,6 +36,7 @@ class Mongoable:
       db[collection_name].update({'name': self.pk}, obj, upsert=upsert)
     except Exception, err:
       logger.info(err)
+      raise MongoDBHandleException('On Instance Update')
 
   @classmethod
   def cls_update(cls, name, obj, upsert=True):
@@ -44,6 +46,7 @@ class Mongoable:
       db[collection_name].update({'name': name}, obj, upsert=upsert)
     except Exception, err:
       logger.info(err)
+      raise MongoDBHandleException('On Class Update')
 
   @classmethod
   def objects(cls):
@@ -68,8 +71,11 @@ class Mongoable:
         json_data = db[collection_name].find_one(query, restrict)
     except Exception, err:
       logger.info(err)
-      return None
+      raise MongoDBHandleException("On Cls Get One Query")
+    
     else:
+      if json_data.has_key('_id'):
+        del json_data['_id']
       return json_data
 
   @classmethod
@@ -84,7 +90,8 @@ class Mongoable:
         clusters = db[collection_name].find(query, restrict)
     except Exception, err:
       logger.info(err)
-      return None
+      raise MongoDBHandleException("On Cls Get by Query")
+
     else:
       return clusters
 
@@ -106,8 +113,10 @@ class Mongoable:
         key, kwargs = index
         pk = key.popitem()
         db[collection_name].ensure_index([pk], **kwargs)
+
     except Exception, err:
       logger.info(err)
+      raise MongoDBHandleException("On Ensure indexes")
 
   @classmethod
   def clear_indexes(cls):
@@ -116,6 +125,7 @@ class Mongoable:
       db[collection_name].drop_indexes()
     except Exception, err:
       logger.info(err)
+      raise MongoDBHandleException("On Clear indexes")
 
   @classmethod
   def delete_all(cls):
