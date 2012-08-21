@@ -370,18 +370,6 @@ class TagManager(object):
   def get_item(self, slug):
     return self.items.get(slug, {})
 
-  def city_clusters(self, tags):
-    d = {}
-    for name, weight in tags:
-      cities = self.tag_cities(name, weight)
-      for city in cities:
-        for name in city:
-          if name not in d:
-            d.update(city)
-          else:
-            d[name]['score'] += city[name]['score']
-    return d
-
   def tag_cities(self, name, weight=1.0):
     if not self.has_tag(name):
       return []

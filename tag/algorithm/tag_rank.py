@@ -2,8 +2,9 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-from math import (top_items, filter_threshold_to_dict, merge_dicts, filter_threshold_to_list)
+from math import top_items, merge_dicts
 from mixins.filter_tags import ThresholdFilter
+from mixins.city_clusters import BaseCityClusters
 from tag.exceptions import NothingException
 
 import copy
@@ -17,7 +18,7 @@ DEFAUTL_IMAGEINE_WEIGHT = 0.3
 TOP_TAGS_THRESHOLD = 0.06
 
 
-class TagRank(ThresholdFilter):
+class TagRank(ThresholdFilter, BaseCityClusters):
   """
   algorithm to rank tags
   @property
@@ -71,7 +72,7 @@ class TagRank(ThresholdFilter):
       logger.info(e)
       return {}
 
-    cities = self.tag_manager.city_clusters(success.items())
+    cities = self.city_clusters(success.items())
 
     def cmp(a, b):
       return int(cities[a]['score'] - cities[b]['score'])
@@ -85,6 +86,9 @@ class TagRank(ThresholdFilter):
       'hide': fail,
       'cities': top_cities
     }
+
+  def get_tag_cities(self, name, weight):
+    return self.tag_manager.tag_cities(name, weight)
 
   def rank_obj(self, obj):
     """
