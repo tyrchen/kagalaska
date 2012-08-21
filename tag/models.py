@@ -291,6 +291,71 @@ class TagManager(object):
 
     return d
 
+  def format_tags(self, success, fail, city_slugs=[]):
+    fail_result = {}
+    success_result = {}
+
+    for tag in fail:
+      b, item = self.format_tag({tag: fail[tag]}, city_slugs=[])
+      fail_result.update(item)
+
+    for tag in success:
+      b, item = self.format_tag({tag: success[tag]}, city_slugs=city_slugs)
+      if not b:
+        fail_result.update(item)
+      else:
+        success_result.update(item)
+
+    return success_result, fail_result
+
+
+  def format_tag(self, tag, city_slugs=[]):
+    def extra_condition(item, city_slugs):
+      if not city_slugs:
+        return True
+
+      if item.get('class', '') == 'PLACE':
+        return self.items[item['slug']].get('parent_slug', '') in city_slugs
+
+      elif item.get('class', '') == 'AREA':
+        return self.items[item['slug']].get('slug', '') in city_slugs
+
+      else:
+        return True
+
+    items = self.tags[tag.items()[0][0]]['items']
+    if not items:
+      return True, {
+        tag.items()[0][0]: {
+          'score': tag.items()[0][1],
+          'slug': ''
+        }
+      }
+    else:
+      recommend = ''
+      for item in items:
+        if item.get('class', '') == 'PLACE' and extra_condition(item, city_slugs):
+          recommend = item
+          break
+
+        elif item.get('class', '') == 'AREA' and extra_condition(item, city_slugs):
+          recommend = item
+
+      if recommend:
+        return True, {
+          tag.items()[0][0]: {
+            'score': tag.items()[0][1],
+            'slug': recommend['slug']
+          }
+        }
+      else:
+        return False, {
+          tag.items()[0][0]: {
+            'score': tag.items()[0][1],
+            'slug': items[0]['slug']
+          }
+        }
+
   def parents(self, name):
     item = self.tags.get(name, [])
     if not item:
@@ -330,8 +395,7 @@ class TagManager(object):
         
       else:
         d = {
-          city['slug']: {
-              'name': city['name_zh'],
+          city['name_zh']: {
               'slug': city['slug'],
               'score': weight
           }

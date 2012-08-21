@@ -2,32 +2,14 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
+from math import (top_items, filter_threshold_to_dict, merge_dicts, filter_threshold_to_list)
 
 import copy
 
 list_nothing = lambda *args, **kwargs: []
 
 DEFAUTL_IMAGEINE_WEIGHT = 0.3
-
-
-def merge_dicts(to_obj, from_obj, weight=1):
-  """
-  merge list or dict to a dict
-  {'a': 1} {'a': 2, 'b': 1}
-  ===> {'a': 3, 'b': 1}
-  """
-  if isinstance(from_obj, list):
-    from_obj = dict.fromkeys(from_obj, weight)
-
-  assert isinstance(from_obj, dict)
-  assert isinstance(to_obj, dict)
-  for key in from_obj:
-    if to_obj.has_key(key):
-      to_obj[key] += from_obj[key]
-    else:
-      to_obj[key] = from_obj[key]
-
-  return to_obj
+TOP_TAGS_THRESHOLD = 0.06
 
 class TagRank(object):
   """
@@ -70,28 +52,27 @@ class TagRank(object):
   def rank(self):
     results = {}
 
-    for obj in self.objs:
+    for obj in self.objs :
       d = self.rank_obj(obj)
       merge_dicts(results, d)
 
-    threshold = 0.06
-    total = 0
-    for value in results.values():
-      total += value
+    def value_func(item):
+      return results[item]
 
-    show = {}
-    hide = {}
-    for key in results:
-      if results[key]/total >= threshold:
-        show[key] = results[key]
-      else:
-        hide[key] = results[key]
+    success, fail = filter_threshold_to_dict(results, value_func, TOP_TAGS_THRESHOLD)
+    cities = self.tag_manager.city_clusters(success.items())
 
-    cities = self.tag_manager.city_clusters(show.items())
+    def cmp(a, b):
+      return int(cities[a]['score'] - cities[b]['score'])
+      
+    top_cities = top_items(1, cities, cmp)
+    success, fail = self.tag_manager.format_tags(success, fail,
+      [top_cities[city]['slug'] for city in top_cities])
+
     return {
-      'show': show,
-      'hide': hide,
-      'cities': cities
+      'show': success,
+      'hide': fail,
+      'cities': top_cities
     }
 
   def rank_obj(self, obj):
@@ -119,6 +100,7 @@ class TagRank(object):
       merge_dicts(results, parents, weight=DEFAUTL_IMAGEINE_WEIGHT)
 
       for remain in data:
-        merge_dicts(results, data[remain], DEFAUTL_IMAGEINE_WEIGHT*DEFAUTL_IMAGEINE_WEIGHT)
+        merge_dicts(results, data[remain],
+                    DEFAUTL_IMAGEINE_WEIGHT*DEFAUTL_IMAGEINE_WEIGHT)
 
     return results
