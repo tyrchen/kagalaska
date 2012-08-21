@@ -3,7 +3,7 @@ import os
 
 # Tag APP
 PROJECT_HOME = os.path.join(os.path.dirname(os.path.abspath(__file__)), '../')
-TMP_HOME = '/var/run/'
+TMP_HOME = '/var/run/kagalaska/'
 DATA_PATH = os.path.join(PROJECT_HOME, 'tag', 'data')
 
 # DATA PATH
