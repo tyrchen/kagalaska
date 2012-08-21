@@ -5,7 +5,7 @@ from __future__ import division, unicode_literals, print_function
 from django.conf import settings
 from twisted.internet import protocol, reactor
 from tag.services.wordseg import BaseSeg
-from tag.models import TagManager
+from tag.managers import TagRankService
 from tag.algorithm.tag_rank import TagRank
 
 import json
@@ -30,7 +30,7 @@ class TraverseService(object):
   __instance = None
   def __new__(cls, *args, **kwargs):
     if not cls.__instance:
-      cls.__instance = TagManager()
+      cls.__instance = TagRankService()
     return cls.__instance
 
 class WordSegProtocol(protocol.Protocol):

@@ -4,7 +4,7 @@
 from __future__ import division, unicode_literals, print_function
 from django.conf import settings
 from twisted.internet import protocol, reactor
-from tag.models import TagManager
+from tag.managers import TagRankService
 
 import logging
 import json
@@ -31,7 +31,7 @@ class RelationFactory(protocol.Factory):
     return json.dumps(self.service.traverse(words)).encode('utf-8')
 
 def run():
-  service = TagManager()
+  service = TagRankService()
 
   print("Start relation Service")
   reactor.listenUNIX(RELATIONS_UNIX_DOMAIN, RelationFactory(service))
