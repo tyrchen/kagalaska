@@ -2,10 +2,14 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
+from tag.exceptions import NothingException
 
 def top_items(n, items, cmp):
+  """
+  将字典里的数据排名，返回前N个
+  """
   if not items:
-    return None
+    raise NothingException("On func top items")
 
   keys = sorted(items, cmp=cmp, reverse=True)
   if len(items) < n:
@@ -18,7 +22,7 @@ def top_items(n, items, cmp):
 
 def filter_threshold_to_list(items, func, threshold=0.0):
   if not items:
-    return [], []
+    raise NothingException
 
   total = 0
 

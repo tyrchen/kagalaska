@@ -5,20 +5,15 @@ from __future__ import division, unicode_literals, print_function
 from math import top_items, merge_dicts
 from mixins.filter_tags import ThresholdFilter
 from mixins.city_clusters import BaseCityClusters
+from mixins.seg_content import BaseSegContent
 from tag.exceptions import NothingException
 
-import copy
+
 import logging
 
 logger = logging.getLogger(__file__)
 
-list_nothing = lambda *args, **kwargs: []
-
-DEFAUTL_IMAGEINE_WEIGHT = 0.3
-TOP_TAGS_THRESHOLD = 0.06
-
-
-class TagRank(ThresholdFilter, BaseCityClusters):
+class TagRank(ThresholdFilter, BaseCityClusters, BaseSegContent):
   """
   algorithm to rank tags
   @property
@@ -34,12 +29,11 @@ class TagRank(ThresholdFilter, BaseCityClusters):
   """
 
   def __init__(self, objs, tag_manager, wordseg, imagine=True,
-               imagine_weight=DEFAUTL_IMAGEINE_WEIGHT, TF_IDF=True):
+              TF_IDF=True):
     self.objs = objs
     self.imagine = imagine
     self.tag_manager = tag_manager
     self.wordseg = wordseg
-    self.imagine_weight = imagine_weight
     self.TF_IDF =TF_IDF
 
   def traverse(self, tag):
@@ -54,31 +48,30 @@ class TagRank(ThresholdFilter, BaseCityClusters):
     return self.tag_manager.traverse(tag)
 
   def parse(self, content, weight, TF_IDF=True):
-    return self.wordseg.parse(content, weight, self.TF_IDF)
+    return self.wordseg.parse(content, weight, TF_IDF)
 
   def rank(self):
     tags = {}
-
     for obj in self.objs :
-      d = self.rank_obj(obj)
+      content = obj.get('content', '')
+      weight = obj.get('weight', 0.5)
+      d = self.seg_content(content=content, weight=weight,
+                           TF_IDF=self.TF_IDF, imagine=self.imagine)
       merge_dicts(tags, d)
 
     try:
-      # filter_tags
+      # 将分词出来的Tag跟军TF_IDF模型过滤
       success, fail = self.filter_tags(tags)
+      # 根据结果获取city的聚类
+      top_cities = self.city_clusters(success.items())
+
     except NothingException:
       return {}
     except Exception, e:
       logger.info(e)
       return {}
 
-    cities = self.city_clusters(success.items())
-
-    def cmp(a, b):
-      return int(cities[a]['score'] - cities[b]['score'])
-      
-    top_cities = top_items(1, cities, cmp)
-    success, fail = self.tag_manager.format_tags(success, fail,
+    success, fail = self.format_tags(success, fail,
       [top_cities[city]['slug'] for city in top_cities])
 
     return {
@@ -87,35 +80,8 @@ class TagRank(ThresholdFilter, BaseCityClusters):
       'cities': top_cities
     }
 
+  def format_tags(self, success, fail, city_slugs=[]):
+    return self.tag_manager.format_tags(success, fail, city_slugs)
+
   def get_tag_cities(self, name, weight):
     return self.tag_manager.tag_cities(name, weight)
-
-  def rank_obj(self, obj):
-    """
-    Algorithm of rank obj.
-
-    """
-    content = obj.get('content', '')
-    weight = float(obj.get('weight', 0.5))
-
-    d = self.parse(content=content, weight=weight)
-    if not self.imagine:
-      return d
-
-    results = copy.deepcopy(d)
-
-    for key in d:
-      data = self.traverse(key)
-      imagine_weight = self.imagine_weight
-
-      if not data.has_key(key):
-        continue
-
-      parents = data.pop(key)
-      merge_dicts(results, parents, weight=DEFAUTL_IMAGEINE_WEIGHT)
-
-      for remain in data:
-        merge_dicts(results, data[remain],
-                    DEFAUTL_IMAGEINE_WEIGHT*DEFAUTL_IMAGEINE_WEIGHT)
-
-    return results

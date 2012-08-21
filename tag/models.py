@@ -389,7 +389,6 @@ class TagManager(object):
           }
         }
         cities.append(d)
-        
     return cities 
 
   def item_city(self, item):

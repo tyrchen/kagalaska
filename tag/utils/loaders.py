@@ -2,7 +2,7 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-from models import Place, Tag
+from tag.models import Place, Tag
 from django.conf import settings
 
 import json

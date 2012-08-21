@@ -2,6 +2,8 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
+from tag.algorithm.math import top_items
+from tag.exceptions import NothingException
 
 """
   Obj: {
@@ -19,7 +21,10 @@ from __future__ import division, unicode_literals, print_function
 """
 
 class BaseCityClusters(object):
-  def city_clusters(self, tags):
+  def city_clusters(self, tags, top_n=1):
+    if not tags:
+      raise NothingException("On City_clusters Mixin")
+
     d = {}
     for name, weight in tags:
       cities = self.get_tag_cities(name, weight)
@@ -29,7 +34,12 @@ class BaseCityClusters(object):
             d.update(city)
           else:
             d[name]['score'] += city[name]['score']
-    return d
+
+    def cmp(a, b):
+      return int(d[a]['score'] - d[b]['score'])
+
+    top_cities = top_items(top_n, d, cmp)
+    return top_cities
 
   def get_tag_cities(self, name, weight):
     raise NotImplemented

@@ -24,7 +24,7 @@ THRESHOLD = 0.06
 class ThresholdFilter(object):
   def filter_tags(self, tags, threshold=THRESHOLD):
     if not tags:
-      raise NothingException
+      raise NothingException("On ThresholdFilter")
 
     total = 0
     for name in tags:
