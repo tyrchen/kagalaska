@@ -3,15 +3,21 @@
 
 from __future__ import division, unicode_literals, print_function
 from math import (top_items, filter_threshold_to_dict, merge_dicts, filter_threshold_to_list)
+from mixins.filter_tags import ThresholdFilter
+from tag.exceptions import NothingException
 
 import copy
+import logging
+
+logger = logging.getLogger(__file__)
 
 list_nothing = lambda *args, **kwargs: []
 
 DEFAUTL_IMAGEINE_WEIGHT = 0.3
 TOP_TAGS_THRESHOLD = 0.06
 
-class TagRank(object):
+
+class TagRank(ThresholdFilter):
   """
   algorithm to rank tags
   @property
@@ -50,16 +56,21 @@ class TagRank(object):
     return self.wordseg.parse(content, weight, self.TF_IDF)
 
   def rank(self):
-    results = {}
+    tags = {}
 
     for obj in self.objs :
       d = self.rank_obj(obj)
-      merge_dicts(results, d)
+      merge_dicts(tags, d)
 
-    def value_func(item):
-      return results[item]
+    try:
+      # filter_tags
+      success, fail = self.filter_tags(tags)
+    except NothingException:
+      return {}
+    except Exception, e:
+      logger.info(e)
+      return {}
 
-    success, fail = filter_threshold_to_dict(results, value_func, TOP_TAGS_THRESHOLD)
     cities = self.tag_manager.city_clusters(success.items())
 
     def cmp(a, b):
