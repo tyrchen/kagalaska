@@ -26,8 +26,15 @@ class PlaceInfoFactory(protocol.Factory):
   def get_by_slug(self, data):
     json_data =json.loads(data.decode('utf-8'))
 
-    slug = json_data['slug']
-    return json.dumps(self.service.get_by_slug(slug, json_format=True)).encode('utf-8')
+    slugs = json_data['slugs']
+    items = []
+    if isinstance(slugs, list):
+      for slug in slugs:
+        items.append({slug: self.service.get_by_slug(slug, json_format=True)})
+    else:
+      items.append({slugs: self.service.get_by_slug(slugs, json_format=True)})
+
+    return json.dumps(items).encode('utf-8')
 
 def run():
   service = Place
