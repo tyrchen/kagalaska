@@ -83,4 +83,3 @@ class BaseSeg(object):
         d[r] = weight * self.keywords.get(r, 1) if TF_IDF else weight
 
     return d
-

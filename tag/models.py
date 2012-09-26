@@ -99,7 +99,8 @@ class Tag(object, Mongoable, Graphical):
   @ parents
   @ similarities
   @ peer
-  @ items: {slug: 'bei-jing-bei-jing-di-qu-china, 'class':'AREA' }
+  @ place_parent: '北京'
+  @ items: [{slug: 'bei-jing-bei-jing-di-qu-china, 'class':'AREA' },]
   """
 
   indexes = [
@@ -111,6 +112,7 @@ class Tag(object, Mongoable, Graphical):
     'PLACE': Place,
     'COUNTRY': Place,
     'CONTINENT': Place,
+    'NORMAL': Normal
   }
 
   def __str__(self):
@@ -150,7 +152,7 @@ class Tag(object, Mongoable, Graphical):
     except (NotExistsException, MongoDBHandleException):
       return None
     except Exception, e:
-      logger(e)
+      logger.info(e)
       return None
 
     else:
@@ -221,11 +223,11 @@ class Tag(object, Mongoable, Graphical):
     places = []
     others = []
     for item in self.items:
-      handle = self.mapping.get(item['class'], Normal)
+      handle = self.mapping.get(item.get('class', 'NORMAL'))
       if handle is Place:
         places.append(handle.get_by_slug(item['slug'], only=['slug', 'class'], json_format=True))
       else:
-        others.append(handle.get_by_slug(item['slug'], only=['slug', 'class'], json_format=True))
+        others.append(handle.get_by_slug(item['slug'], json_format=True))
     return {
       'places': places,
       'others': others

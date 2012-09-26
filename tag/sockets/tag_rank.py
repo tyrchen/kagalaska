@@ -4,9 +4,9 @@
 from __future__ import division, unicode_literals, print_function
 from django.conf import settings
 from twisted.internet import protocol, reactor
+from tag.algorithm.rank import LazyRank
+from tag.service import TagService
 from tag.services.wordseg import BaseSeg
-from tag.managers import TagRankService
-from tag.algorithm.tag_rank import TagRank
 
 import json
 import logging
@@ -26,29 +26,19 @@ class WordSegService(object):
   def __init__(self):
     self.seg = BaseSeg()
 
-class TraverseService(object):
-  __instance = None
-  def __new__(cls, *args, **kwargs):
-    if not cls.__instance:
-      cls.__instance = TagRankService()
-    return cls.__instance
-
 class WordSegProtocol(protocol.Protocol):
   def dataReceived(self, data):
     json_data = json.loads(data.decode('utf-8'))
     extra = json_data.get('extra', [])
     objs = [
-      {'content': json_data['title'], 'weight': 1.5},
+      {'content': json_data['title'], 'weight': 2},
       {'content': json_data['content'], 'weight': 1}
     ]
     objs.extend(extra)
-    imagine = json_data.get('imagine', True)
     TF_IDF = json_data.get('TF_IDF', True)
 
-    rank = TagRank(objs, tag_manager=self.factory.relations,
-                   wordseg=self.factory.wordseg, imagine=imagine,
-                   TF_IDF=TF_IDF)
-    
+    rank = LazyRank(objs, seg_ref=self.factory.wordseg,
+                    tag_service_ref=self.factory.relations, tf_idf=TF_IDF)
     results = rank.rank()
     self.transport.write(json.dumps(results).encode('utf-8'))
 
@@ -67,7 +57,7 @@ class WordSegFactory(protocol.Factory):
 
 def run():
   wordseg = WordSegService()
-  relations = TraverseService()
+  relations = TagService()
 
   print("Start WordSeg Service")
   reactor.listenUNIX(WORDSEG_UNIX_DOMAIN, WordSegFactory(wordseg, relations))

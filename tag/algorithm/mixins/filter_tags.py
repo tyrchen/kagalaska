@@ -19,7 +19,7 @@ from tag.exceptions import NothingException
   }
 """
 
-THRESHOLD = 0.06
+THRESHOLD = 0.1
 
 class ThresholdFilter(object):
   def filter_tags(self, tags, threshold=THRESHOLD):
