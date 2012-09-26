@@ -98,7 +98,7 @@ class Tag(object, Mongoable, Graphical):
   @ score
   @ parents
   @ similarities
-  @ peer
+  @ equal_to
   @ place_parent: '北京'
   @ items: [{slug: 'bei-jing-bei-jing-di-qu-china, 'class':'AREA' },]
   """
