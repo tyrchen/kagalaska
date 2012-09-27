@@ -36,6 +36,7 @@ class PlaceInfoLoader(object):
             class_name = json_data.pop('class')
             name = json_data.pop('name_zh')
             item = {'slug': slug, 'class': class_name}
+            categories = json_data.get('categories', '')
             try:
               parent_slug = json_data.get('parent_slug', '')
               parent = Place.get_by_slug(parent_slug, json_format=True)
@@ -44,9 +45,10 @@ class PlaceInfoLoader(object):
               place_parent = ''
 
             if not place_parent:
-              tag = Tag(name=name, items=[item], score=float(DEFAULT_SCORE))
+              tag = Tag(name=name, items=[item], score=float(DEFAULT_SCORE), parents=categories)
             else:
-              tag = Tag(name=name, items=[item], score=float(DEFAULT_SCORE), place_parent=place_parent)
+              tag = Tag(name=name, items=[item], score=float(DEFAULT_SCORE),
+                        place_parent=place_parent, parents=categories)
 
             tag.save()
             
