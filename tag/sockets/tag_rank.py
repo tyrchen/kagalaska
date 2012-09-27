@@ -7,6 +7,7 @@ from twisted.internet import protocol, reactor
 from tag.algorithm.rank import LazyRank
 from tag.service import TagService
 from tag.services.wordseg import BaseSeg
+from mixins import ModifyMixin, DispatchMixin
 
 import json
 import logging
@@ -26,21 +27,10 @@ class WordSegService(object):
   def __init__(self):
     self.seg = BaseSeg()
 
-class WordSegProtocol(protocol.Protocol):
+class WordSegProtocol(protocol.Protocol, DispatchMixin):
   def dataReceived(self, data):
-    json_data = json.loads(data.decode('utf-8'))
-    extra = json_data.get('extra', [])
-    objs = [
-      {'content': json_data['title'], 'weight': 2},
-      {'content': json_data['content'], 'weight': 1}
-    ]
-    objs.extend(extra)
-    TF_IDF = json_data.get('TF_IDF', True)
-
-    rank = LazyRank(objs, seg_ref=self.factory.wordseg,
-                    tag_service_ref=self.factory.relations, tf_idf=TF_IDF)
-    results = rank.rank()
-    self.transport.write(json.dumps(results).encode('utf-8'))
+    response = self.dispatch(data, self.factory)
+    self.transport.write(response)
 
 class WordSegFactory(protocol.Factory):
   protocol = WordSegProtocol
@@ -54,6 +44,20 @@ class WordSegFactory(protocol.Factory):
 
   def traverse(self, tag):
     return self.relations.traverse(tag)
+
+  def rank(self, **json_data):
+    extra = json_data.get('extra', [])
+    objs = [
+      {'content': json_data['title'], 'weight': 2},
+      {'content': json_data['content'], 'weight': 1}
+    ]
+    objs.extend(extra)
+    TF_IDF = json_data.get('TF_IDF', True)
+
+    rank = LazyRank(objs, seg_ref=self.wordseg,
+                    tag_service_ref=self.relations, tf_idf=TF_IDF)
+    results = rank.rank()
+    return json.dumps(results).encode('utf-8')
 
 def run():
   wordseg = WordSegService()

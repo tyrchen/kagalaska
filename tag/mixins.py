@@ -132,6 +132,15 @@ class Mongoable:
     collection_name = cls.__name__.lower()
     db[collection_name].remove()
 
+  def remove(self):
+    collection_name = self.__class__.__name__.lower()
+    try:
+      db[collection_name].remove({'name': self.pk})
+    except Exception, err:
+      logger.info(err)
+      raise MongoDBHandleException(
+        "On Remove Document %s " % self.pk)
+
 class Graphical:
   def traverse(self):
     d = {}
