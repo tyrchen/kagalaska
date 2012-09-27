@@ -44,7 +44,7 @@ class LazyRank(AggregationMixin):
       return int(a[1] - b[1])
 
     sorted_items = sorted(top_tags_list, cmp, reverse=True)
-    return sorted_items if len(sorted_items) < 10 else sorted_items[:10]
+    return sorted_items if len(sorted_items) < top else sorted_items[:top]
 
   def clusters(self, tags, origin, top_n=1):
     return self.tag_service.clusters(tags, origin, top_n)

@@ -161,6 +161,10 @@ class TagService(object):
             name: value
           })
 
+      elif class_name in ('COUNTRY', 'CONTINENT') and not top_cities:
+        places.update({
+          name: value
+        })
 
     places.update(top_cities_dict)
 
@@ -200,9 +204,15 @@ class TagService(object):
 
   def do_format(self, name, score):
     item = self.get_item(name)
+    class_name = item.get('class', 'NORMAL')
+    if class_name == 'NORMAL':
+      slug = ''
+    else:
+      slug = item.get('slug', '')
+
     return {
       name: {
         'score': score,
-        'slug': item.get('slug', '')
+        'slug': slug
       }
     }
