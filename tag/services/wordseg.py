@@ -5,7 +5,7 @@ from __future__ import division, unicode_literals, print_function
 import mmseg as _mmseg
 from django.conf import settings
 from tag.models import Tag
-from tag.utils import to_str, to_unicode
+from tag.utils import to_str
 
 import logging
 
@@ -56,14 +56,14 @@ class BaseSeg(object):
       score = getattr(tag, 'score', settings.NEW_WORD_DEFAULT_VALUE)
       self.add_keyword(name.strip(), score)
 
-  def add_word(self, name, score=6.0):
+  def add_word(self, name, score=settings.NEW_WORD_DEFAULT_VALUE):
     self.add_keyword(name.strip(), float(score))
     self.seg.seg.Dictionary.add(name)
 
   def is_keyword(self, word):
     return self.keywords.has_key(word)
 
-  def add_keyword(self, word, score=1.0):
+  def add_keyword(self, word, score=settings.NEW_WORD_DEFAULT_VALUE):
     self.keywords.update({word: score})
 
   def parse(self, words, weight=1, TF_IDF=True):

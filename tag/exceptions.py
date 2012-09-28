@@ -21,7 +21,7 @@ class MongoDBHandleException(Exception):
     return self.handle
 
   def __str__(self):
-    return self.name
+    return self.handle
 
 class NothingException(Exception):
   def __init__(self, name):
