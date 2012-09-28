@@ -19,6 +19,18 @@ def to_unicode(obj):
   else:
     return obj
 
+def rank_dict(aim_dict, top=0):
+  items = aim_dict.items()
+
+  def cmp(a, b):
+    return int(a[1] - b[1])
+  sorted_items = sorted(items, cmp=cmp, reverse=True)
+
+  if not top:
+    return sorted_items
+  else:
+    return sorted_items[:top] if len(sorted_items) > top else sorted_items
+
 class TagFileHelper(object):
   def load_from_file(self):
     path = settings.RELATIONS_PATH

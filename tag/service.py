@@ -4,6 +4,7 @@
 from __future__ import division, unicode_literals, print_function
 from tag.models import Tag, Place
 from django.conf import settings
+from tag.utils.util import rank_dict
 
 DEFAULT_VALUE = settings.NEW_WORD_DEFAULT_VALUE
 
@@ -64,23 +65,16 @@ class TagService(object):
     items = items_dict['places'] or items_dict['others']
     place_parent = getattr(tag, 'place_parent', '')
     equal_to = getattr(tag, 'equal_to', '')
-    if not place_parent:
-      self.tags.update({
-        name: {
-          'parents': parents,
-          'items': items,
-          'equal_to': equal_to
-        }
+    proxy = getattr(tag, 'proxy', 'NORMAL')
+    self.tags.update({
+      name: {
+        'parents': parents,
+        'items': items,
+        'place_parent': place_parent,
+        'equal_to': equal_to,
+        'proxy': proxy
+      }
       })
-    else:
-      self.tags.update({
-          name: {
-            'parents': parents,
-            'items': items,
-            'place_parent': place_parent,
-            'equal_to': equal_to
-          }
-        })
 
     for item in items:
       if self.has_slug(item['slug']):
@@ -144,11 +138,7 @@ class TagService(object):
 
   def get_type(self, name):
     tag = self.get_tag(name)
-    items = tag['items']
-    if not items:
-      return 'NORMAL'
-
-    return items[0].get('class', 'NORMAL')
+    return tag.get('proxy', 'NORMAL')
 
   def get_parents(self, name):
     tag = self.get_tag(name)
@@ -163,65 +153,113 @@ class TagService(object):
 
     return items[0]
 
-  def clusters(self, tags, origin, top_n=1):
-    city_dict = {}
+  def get_place_parent(self, name):
+    tag = self.get_tag(name)
+    return tag.get('place_parent', '')
+
+  def guess(self, tags):
+    countries = []
+    cities = []
+    places = []
+    normals = []
+
     for name, value in tags:
-      city = self.get_city_or_normal(name, normal=False)
-      if not city:
+      proxy = self.get_type(name)
+      if proxy == 'NORMAL':
+        normals.append((name, value))
+      elif proxy == 'COUNTRY':
+        countries.append((name, value))
+      elif proxy == 'AREA':
+        cities.append((name, value))
+      elif proxy == 'PLACE':
+        places.append((name, value))
+
+    guessed_places, guessed_cities = self.do_guess_places(countries, cities, places)
+    guessed_normals = self.do_guess_normals(normals)
+    return guessed_places, guessed_cities, guessed_normals
+
+  def do_guess_places(self, countries, cities, places, top=1):
+    guessed_cities = self.guess_parents(places)
+    def merge_items_to_dict(items, aim_dict):
+      for item, value in items:
+        if item in aim_dict:
+          aim_dict[item] += value
+        else:
+          aim_dict.update({
+            item: value
+          })
+      return aim_dict
+
+    guessed_cities = merge_items_to_dict(cities, guessed_cities)
+    guessed_countries = self.guess_parents(guessed_cities.items())
+    guessed_countries = merge_items_to_dict(countries, guessed_countries)
+    top_country = rank_dict(guessed_countries, top=1)
+    available_country = [country for country, _ in top_country]
+    top_cities = rank_dict(guessed_cities)
+    top_city = []
+    top_places = []
+    for city, value in top_cities:
+      if self.get_place_parent(city) in available_country:
+        top_city.append((city, value))
+        break
+
+    available_cities = [city for city, _ in top_city]
+    for place, value in places:
+      if self.get_place_parent(place) in available_cities:
+        top_places.append((place, value))
+
+    if not top_places and not top_city:
+      return top_country, []
+    else:
+      result = []
+      result.extend(top_places)
+      result.extend(top_city)
+      return result, top_city
+
+  def do_guess_normals(self, normals, top=1):
+    if not normals:
+      return []
+    available = normals[0:1]
+    for key, value in available:
+      parents = self.get_parents(key)
+      for parent in parents:
+        available.append((parent, value))
+    return available
+
+  def guess_parents(self, children):
+    parents = {}
+    for child, value in children:
+      parent = self.get_place_parent(child)
+      if not parent:
         continue
-
-      if city in city_dict:
-        city_dict[city] += value
+      elif parent in parents:
+        parents[parent] += value
       else:
-        city_dict[city] = value
+        parents.update({
+          parent: value
+        })
+    return parents
 
-    city_list = city_dict.items()
-    def cmp(a, b):
-      return int(a[1] - b[1])
-
-    sorted_city_list = sorted(city_list, cmp=cmp, reverse=True)
-    top_cities = sorted_city_list if len(sorted_city_list) < top_n else sorted_city_list[:top_n]
-    top_cities_dict = {}
-    for key, value in top_cities:
-      top_cities_dict.update(
-        {key: value}
-      )
-
+  def clusters(self, tags, origin, top_n=1):
+    guessed_places, guessed_cities, guessed_normal = self.guess(tags)
     places = {}
     others = {}
 
-    for name, value in tags:
-      class_name = self.get_type(name)
-      if class_name == 'PLACE' and self.get_city_or_normal(name) in top_cities_dict:
+    for key, value in guessed_places:
+      if key in places:
+        places[key] += value
+      else:
         places.update({
-          name: value}
-        )
-      elif class_name == 'NORMAL':
-        parents = self.get_parents(name)
-        for parent in parents:
-          others.update({
-            parent: value
-          })
-
-        if not parents:
-          others.update({
-            name: value
-          })
-
-      elif class_name in ('COUNTRY', 'CONTINENT') and not top_cities:
-        places.update({
-          name: value
+          key: value
         })
 
-    places.update(top_cities_dict)
-
-    for key, value in origin.items():
-      class_name = self.get_type(name)
-      if class_name == 'PLACE' and self.get_city_or_normal(name) in top_cities_dict:
-        places.update({
-          name: value}
-        )
-
+    for key, value in guessed_normal:
+      if key in others:
+        others[key] += value
+      else:
+        others.update({
+          key: value
+        })
     return places, others
 
   def format(self, places, others):

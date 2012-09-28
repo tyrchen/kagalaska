@@ -37,6 +37,7 @@ class PlaceInfoLoader(object):
             name = json_data.pop('name_zh')
             item = {'slug': slug, 'class': class_name}
             categories = json_data.get('categories', '')
+            tag_type = class_name
             try:
               parent_slug = json_data.get('parent_slug', '')
               parent = Place.get_by_slug(parent_slug, json_format=True)
@@ -45,10 +46,12 @@ class PlaceInfoLoader(object):
               place_parent = ''
 
             if not place_parent:
-              tag = Tag(name=name, items=[item], score=float(DEFAULT_SCORE), parents=categories)
+              tag = Tag(name=name, items=[item], score=float(DEFAULT_SCORE),
+                        parents=categories, proxy=tag_type)
             else:
               tag = Tag(name=name, items=[item], score=float(DEFAULT_SCORE),
-                        place_parent=place_parent, parents=categories)
+                        place_parent=place_parent, parents=categories,
+                        proxy=tag_type)
 
             tag.save()
             
@@ -129,13 +132,17 @@ class NormalTagLoader(object):
         # To tag model
         exists = Tag.get_by_name(name)
         if not exists:
-          tag = Tag(name=name, parents=parents, score=self.score, items=[{'slug': name, 'class': 'NORMAL'},])
+          tag = Tag(name=name, parents=parents, score=self.score,
+                    items=[{'slug': name, 'class': 'NORMAL'},],
+                    proxy='NORMAL')
           print("Tag Item, %s" % name)
           tag.save()
 
         for parent in parents:
           exists = Tag.get_by_name(parent)
           if not exists:
-            tag = Tag(name=parent, score=self.score, items=[{'slug': parent, 'class': 'NORMAL'},])
+            tag = Tag(name=parent, score=self.score,
+                      items=[{'slug': parent, 'class': 'NORMAL'},],
+                      proxy='NORMAL')
             print("Tag item %s " % parent)
             tag.save()
