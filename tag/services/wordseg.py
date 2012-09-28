@@ -38,17 +38,12 @@ class Seg(object):
 
 class BaseSeg(object):
   def __init__(self, words_path=WORDS_PATH, chars_path=CHARS_PATH):
-    print("写最新字典文件")
     path = Tag.cls_to_file(words_path)
-    print("分词载入字典文件")
     self.seg = Seg(path, chars_path)
-    print("分词载入完毕")
 
     self.words_path = words_path if words_path else WORDS_PATH
     self.keywords = {}
-    print("载入权重表")
     self._load()
-    print("载入完毕")
 
   def _load(self):
     for tag in Tag.objects():
