@@ -15,6 +15,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 WORDSEG_UNIX_DOMAIN = settings.WORDSEG_UNIX_DOMAIN
+DEFAULT_VALUE = settings.NEW_WORD_DEFAULT_VALUE
+TITLE_WEIGHT = settings.TITLE_WEIGHT
+CONTENT_WEIGHT = settings.CONTENT_WEIGHT
 
 class WordSegService(object):
   # Singleton instance to parse words
@@ -24,15 +27,12 @@ class WordSegService(object):
       cls.__instance = BaseSeg()
     return cls.__instance
 
-  def __init__(self):
-    self.seg = BaseSeg()
-
 class WordSegProtocol(protocol.Protocol, DispatchMixin):
   def dataReceived(self, data):
     response = self.dispatch(data, self.factory)
-    self.transport.write(response)
+    self.transport.write(json.dumps(response).encode('utf-8'))
 
-class WordSegFactory(protocol.Factory):
+class WordSegFactory(protocol.Factory, ModifyMixin):
   protocol = WordSegProtocol
 
   def __init__(self, wordseg, relations):
@@ -48,8 +48,8 @@ class WordSegFactory(protocol.Factory):
   def rank(self, **json_data):
     extra = json_data.get('extra', [])
     objs = [
-      {'content': json_data['title'], 'weight': 2},
-      {'content': json_data['content'], 'weight': 1}
+      {'content': json_data['title'], 'weight': TITLE_WEIGHT},
+      {'content': json_data['content'], 'weight': CONTENT_WEIGHT}
     ]
     objs.extend(extra)
     TF_IDF = json_data.get('TF_IDF', True)
@@ -57,7 +57,22 @@ class WordSegFactory(protocol.Factory):
     rank = LazyRank(objs, seg_ref=self.wordseg,
                     tag_service_ref=self.relations, tf_idf=TF_IDF)
     results = rank.rank()
-    return json.dumps(results).encode('utf-8')
+    return results
+
+  def add(self, **kwargs):
+    name = kwargs.get('name', '')
+    if not name:
+      return
+
+    score = float(kwargs.get('score', DEFAULT_VALUE))
+    self.wordseg.add_word(name, score)
+    self.relations.add(**kwargs)
+
+  def update(self, **kwargs):
+    self.relations.add(**kwargs)
+
+  def remove(self, **kwargs):
+    self.relations.remove(**kwargs)
 
 def run():
   wordseg = WordSegService()

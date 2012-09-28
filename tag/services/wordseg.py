@@ -57,6 +57,10 @@ class BaseSeg(object):
 
       self.add_keyword(name.strip(), float(score.strip()))
 
+  def add_word(self, name, score=6.0):
+    self.add_keyword(name.strip(), float(score))
+    self.seg.seg.Dictionary.add(name)
+
   def is_keyword(self, word):
     return self.keywords.has_key(word)
 

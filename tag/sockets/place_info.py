@@ -16,7 +16,7 @@ PLACEINFO_UNIX_DOMAIN = settings.PLACEINFO_UNIX_DOMAIN
 class PlaceInfoProtocol(protocol.Protocol, DispatchMixin):
   def dataReceived(self, data):
     response = self.dispatch(data, self.factory)
-    self.transport.write(response)
+    self.transport.write(json.dumps(response).encode('utf-8'))
 
 class PlaceInfoFactory(protocol.Factory):
   protocol = PlaceInfoProtocol
@@ -33,7 +33,7 @@ class PlaceInfoFactory(protocol.Factory):
     else:
       items.update({slugs: self.service.get_by_slug(slugs, json_format=True)})
 
-    return json.dumps(items).encode('utf-8')
+    return items
 
 def run():
   service = Place

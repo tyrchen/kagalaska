@@ -3,6 +3,9 @@
 
 from __future__ import division, unicode_literals, print_function
 from tag.models import Tag, Place
+from django.conf import settings
+
+DEFAULT_VALUE = settings.NEW_WORD_DEFAULT_VALUE
 
 class TagService(object):
   def __init__(self):
@@ -10,45 +13,79 @@ class TagService(object):
     self.items = {}
     self.to_cache()
 
+  def generate_tag(self, name, score=DEFAULT_VALUE, items=[], **kwargs):
+    return Tag(name=name, score=score, items=items, **kwargs)
+
+  def add(self, **json_data):
+    tag = self.generate_tag(**json_data)
+    try:
+      tag.save()
+    except Exception:
+      return False
+
+    self.add_tag(tag)
+    return True
+
+  def update(self, **json_data):
+    name = json_data.get('name', '')
+    self.remove(name)
+    self.add(json_data)
+
+  def remove(self, **json_data):
+    name = json_data.get('name', '')
+    if not name in self.tags:
+      return
+
+    del self.tags[name]
+    tag = Tag.get_by_name(name)
+    tag.remove()
+
   def to_cache(self):
     """
     考虑load的时候通过文件
     """
     for tag in Tag.objects():
-      name = tag.name
-      parents = getattr(tag, 'parents', [])
-      items_dict = tag.get_items()
-      items = items_dict['places'] or items_dict['others']
-      place_parent = getattr(tag, 'place_parent', '')
-      if not place_parent:
-        self.tags.update({
+      self.add_tag(tag)
+
+  def add_tag(self, tag):
+    name = tag.name
+    parents = getattr(tag, 'parents', [])
+    items_dict = tag.get_items()
+    items = items_dict['places'] or items_dict['others']
+    place_parent = getattr(tag, 'place_parent', '')
+    equal_to = getattr(tag, 'equal_to', '')
+    if not place_parent:
+      self.tags.update({
+        name: {
+          'parents': parents,
+          'items': items,
+          'equal_to': equal_to
+        }
+      })
+    else:
+      self.tags.update({
           name: {
             'parents': parents,
-            'items': items
+            'items': items,
+            'place_parent': place_parent,
+            'equal_to': equal_to
           }
         })
-      else:
-        self.tags.update({
-            name: {
-              'parents': parents,
-              'items': items,
-              'place_parent': place_parent
-            }
-          })
 
-      for item in items:
-        if self.has_slug(item['slug']):
-          continue
+    for item in items:
+      if self.has_slug(item['slug']):
+        continue
 
-        obj = Place.get_by_slug(item['slug'], json_format=True)
-        if not obj:
-          continue
+      obj = Place.get_by_slug(item['slug'], json_format=True)
+      if not obj:
+        continue
 
-        slug = obj.get('slug', '')
-        if not slug:
-          continue
+      slug = obj.get('slug', '')
+      if not slug:
+        continue
 
-        self.items.update({slug: obj})
+      self.items.update({slug: obj})
+
 
   def has_slug(self, slug):
     return self.items.has_key(slug)

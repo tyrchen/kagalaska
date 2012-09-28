@@ -17,17 +17,14 @@ class DispatchMixin(object):
     if not func:
       return ''
     else:
-      return func(**json_data)
+      return func(**json_data) or {'ret': 200 }
 
 class ModifyMixin(object):
-  def get(self, **kwargs):
-    raise NotImplemented
-
   def update(self, **kwargs):
     raise NotImplemented
 
   def add(self, **kwargs):
     raise NotImplemented
 
-  def delete(self, **kwargs):
+  def remove(self, **kwargs):
     raise NotImplemented

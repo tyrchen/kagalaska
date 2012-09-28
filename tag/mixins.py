@@ -26,8 +26,6 @@ class Mongoable:
     except Exception, err:
       logger.info(err)
       raise MongoDBHandleException('On Save')
-    else:
-      return True
 
   def update(self, obj, upsert=True):
     collection_name = self.__class__.__name__.lower()

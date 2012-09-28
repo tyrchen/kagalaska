@@ -17,7 +17,7 @@ RELATIONS_UNIX_DOMAIN = settings.RELATIONS_UNIX_DOMAIN
 class RelationProtocol(protocol.Protocol, DispatchMixin):
   def dataReceived(self, data):
     response = self.dispatch(data, self.factory)
-    self.transport.write(response)
+    self.transport.write(json.dumps(response).encode('utf-8'))
 
 class RelationFactory(protocol.Factory):
   protocol = RelationProtocol
@@ -27,7 +27,7 @@ class RelationFactory(protocol.Factory):
 
   def traverse(self, **json_data):
     words = json_data['words']
-    return json.dumps(self.service.traverse(words)).encode('utf-8')
+    return self.service.traverse(words)
 
 def run():
   service = TagRankService()
