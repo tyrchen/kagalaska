@@ -12,6 +12,7 @@ CHARS_PATH = os.path.join(DATA_PATH, 'chars.dic')
 RELATIONS_PATH = os.path.join(DATA_PATH, 'relations')
 TRAIN_RATE_PATH = os.path.join(DATA_PATH, 'tag_rate_train.dic')
 WORDS_RATE_PATH = os.path.join(DATA_PATH, 'words_rate.dic')
+TAG_TO_FILE_PATH = os.path.join(DATA_PATH, 'tag_words.dic')
 
 #UNIX_DOMAIN
 WORDSEG_UNIX_DOMAIN = os.path.join(TMP_HOME, 'wordseg.sock')

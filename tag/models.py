@@ -84,6 +84,7 @@ class Normal(object, Mongoable):
       return None
     except Exception, e:
       logger.info(e)
+      return None
 
     else:
       if not json_format:
@@ -174,6 +175,17 @@ class Tag(object, Mongoable, Graphical):
       file.write(line.encode('utf-8'))
 
     file.close()
+
+  @classmethod
+  def cls_to_file(cls, path=settings.TAG_TO_FILE_PATH):
+    file = open(path, 'w')
+
+    tags = cls.objects()
+    for tag in tags:
+      line = '%d %s\n' %(len(tag.name), tag.name)
+      file.write(line.encode('utf-8'))
+    file.close()
+    return path
 
   def to_dict(self):
     return vars(self)

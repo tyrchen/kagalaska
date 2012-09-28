@@ -4,13 +4,14 @@
 from __future__ import division, unicode_literals, print_function
 import mmseg as _mmseg
 from django.conf import settings
+from tag.models import Tag
 from tag.utils import to_str, to_unicode
 
 import logging
 
 logger = logging.getLogger()
 
-WORDS_PATH = settings.WORDS_PATH
+WORDS_PATH = settings.TAG_TO_FILE_PATH
 CHARS_PATH = settings.CHARS_PATH
 RATE_PATH = settings.WORDS_RATE_PATH
 
@@ -37,25 +38,23 @@ class Seg(object):
 
 class BaseSeg(object):
   def __init__(self, words_path=WORDS_PATH, chars_path=CHARS_PATH):
-    self.seg = Seg(words_path, chars_path)
+    print("写最新字典文件")
+    path = Tag.cls_to_file(words_path)
+    print("分词载入字典文件")
+    self.seg = Seg(path, chars_path)
+    print("分词载入完毕")
+
     self.words_path = words_path if words_path else WORDS_PATH
     self.keywords = {}
+    print("载入权重表")
     self._load()
+    print("载入完毕")
 
   def _load(self):
-    file = open(settings.WORDS_RATE_PATH, 'r')
-    lines = file.readlines()
-    file.close()
-
-    for line in lines:
-      line = to_unicode(line)
-      try:
-        name, score = line.split('\t')
-      except Exception, err:
-        logger.debug(err)
-        continue
-
-      self.add_keyword(name.strip(), float(score.strip()))
+    for tag in Tag.objects():
+      name = tag.name
+      score = getattr(tag, 'score', settings.NEW_WORD_DEFAULT_VALUE)
+      self.add_keyword(name.strip(), score)
 
   def add_word(self, name, score=6.0):
     self.add_keyword(name.strip(), float(score))
