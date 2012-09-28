@@ -40,6 +40,16 @@ class TagService(object):
     tag = Tag.get_by_name(name)
     tag.remove()
 
+  def get_names(self, **json_data):
+    names = json_data.get('name', [])
+    if not names:
+      return
+
+    if isinstance(names, basestring):
+      names = [names, ]
+
+    return Tag.get_many_by_names(names)
+
   def to_cache(self):
     """
     考虑load的时候通过文件

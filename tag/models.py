@@ -163,6 +163,16 @@ class Tag(object, Mongoable, Graphical):
         return json_data
 
   @classmethod
+  def get_many_by_names(cls, names, json_format=True):
+    tags = []
+    for name in names:
+      tag = cls.get_by_name(name, json_format)
+      if not tag:
+        continue
+      tags.append(tag)
+    return tags
+
+  @classmethod
   def cls_to_rate(cls, default=6):
     path = settings.WORDS_RATE_PATH
     file = open(path, 'a')

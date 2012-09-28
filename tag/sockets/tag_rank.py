@@ -68,6 +68,9 @@ class WordSegFactory(protocol.Factory, ModifyMixin):
     self.wordseg.add_word(name, score)
     self.relations.add(**kwargs)
 
+  def get(self, **kwargs):
+    return self.relations.get_names(**kwargs)
+
   def update(self, **kwargs):
     self.relations.add(**kwargs)
 

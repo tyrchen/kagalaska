@@ -28,3 +28,6 @@ class ModifyMixin(object):
 
   def remove(self, **kwargs):
     raise NotImplemented
+
+  def get(self, **kwargs):
+    raise NotImplemented
