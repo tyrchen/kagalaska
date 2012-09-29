@@ -5,6 +5,7 @@ from __future__ import division, unicode_literals, print_function
 from mixins.aggregations import AggregationMixin
 from tag.service import TagService
 from tag.services.wordseg import BaseSeg
+from tag.utils.util import smart_print
 
 class LazyRank(AggregationMixin):
   def __init__(self, contents, seg_ref, tag_service_ref, tf_idf=True, **kwargs):
@@ -65,7 +66,8 @@ class LazyRank(AggregationMixin):
     top_n_tags_list = self.ranking(filtered_tags, top=10) # 将聚合结果排名
     places, others = self.clusters(top_n_tags_list, filtered_tags) # 根据权重得出最权威的places和其他信息
 
-    return self.format(places, others) # 返回formatted的数据
+    result = self.format(places, others)
+    return result # 返回formatted的数据
 
 def test():
   contents = [{

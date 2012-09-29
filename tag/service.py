@@ -105,7 +105,7 @@ class TagService(object):
     if not tag:
       return None
 
-    real_tag = tag.get('peer', None)
+    real_tag = tag.get('equal_to', None)
     return real_tag or name
 
   def filter(self, tags_dict):
@@ -123,10 +123,16 @@ class TagService(object):
 
   def get_tag(self, name):
     tag_name = self.get_tag_name(name)
+    if not tag_name:
+      return None
+
     return self.tags[tag_name]
 
   def get_city_or_normal(self, name, normal=True):
     tag = self.get_tag(name)
+    if not tag:
+      return None
+
     tag_type = self.get_type(name)
     if tag_type == 'PLACE':
       place_parent = tag.get('place_parent', '')
@@ -138,15 +144,24 @@ class TagService(object):
 
   def get_type(self, name):
     tag = self.get_tag(name)
+    if not tag:
+      return 'NORMAL'
+
     return tag.get('proxy', 'NORMAL')
 
   def get_parents(self, name):
     tag = self.get_tag(name)
+    if not tag:
+      return []
+
     parents = tag.get('parents', [])
-    return parents
+    return filter(None, parents)
 
   def get_item(self, name):
     tag = self.get_tag(name)
+    if not tag:
+      return {}
+
     items = tag.get('items', [])
     if not items:
       return {}
@@ -155,7 +170,10 @@ class TagService(object):
 
   def get_place_parent(self, name):
     tag = self.get_tag(name)
-    return tag.get('place_parent', '')
+    if not tag:
+      return None
+
+    return tag.get('place_parent', None)
 
   def guess(self, tags):
     countries = []
@@ -232,6 +250,7 @@ class TagService(object):
       parent = self.get_place_parent(child)
       if not parent:
         continue
+
       elif parent in parents:
         parents[parent] += value
       else:

@@ -19,6 +19,17 @@ def to_unicode(obj):
   else:
     return obj
 
+def smart_print(items, name):
+  print("########## %s ##########" % name)
+  if isinstance(items, list):
+    for item in items:
+      print(item)
+  elif isinstance(items, dict):
+    for key, value in items.items():
+      print(key, value)
+  else:
+    print(items)
+
 def rank_dict(aim_dict, top=0):
   items = aim_dict.items()
 

@@ -164,6 +164,62 @@ class Tag(object, Mongoable, Graphical):
         return json_data
 
   @classmethod
+  def load_from_path(cls, path=settings.TAGS_RESOURCE_PATH):
+    file = open(path, 'r')
+    lines = file.readlines()
+    file.close()
+
+    tag_place_cache = {}
+
+    for line in lines[1:]:
+      tag = cls._do_load(line)
+      if tag.proxy != 'NORMAL':
+        place_slug = tag.items[0]['slug']
+        tag_name = tag.equal_to or tag.name
+        tag_place_cache.update({
+          place_slug: tag_name
+        })
+
+    Tag.delete_all()
+    for line in lines[1:]:
+      tag = cls._do_load(line)
+      place_slug = tag.items[0]['slug']
+      place_info = Place.get_by_slug(place_slug, json_format=True)
+      parent_slug = place_info.get('parent_slug', '') if place_info else ''
+      if parent_slug in tag_place_cache:
+        tag.place_parent = tag_place_cache[parent_slug]
+
+      print(tag.name)
+      if tag.name.strip():
+        tag.save()
+
+  @classmethod
+  def _do_load(cls, line):
+    line = line[:-1].decode('utf-8')
+    name, score, parents_str, equal_to, items_str = line.split('\t')
+    parents = parents_str.split(',')
+    items = items_str.split(',')
+    formatted_items = []
+
+    try:
+      score = settings.NEW_WORD_DEFAULT_VALUE
+    except Exception:
+      score = settings.NEW_WORD_DEFAULT_VALUE
+
+    class_name = 'NORMAL'
+    for item in items:
+      try:
+        slug, class_name = item.split('__')
+      except Exception:
+        slug, class_name = item.split('__')[0], 'NORMAL'
+      formatted_items.append({
+        'slug': slug,
+        'class': class_name
+      })
+    return Tag(name=name, score=score, proxy=class_name, items=formatted_items,
+               parents=parents, equal_to=equal_to)
+
+  @classmethod
   def get_many_by_names(cls, names, json_format=True):
     tags = []
     for name in names:
@@ -248,9 +304,16 @@ class Tag(object, Mongoable, Graphical):
     for item in self.items:
       handle = self.mapping.get(item.get('class', 'NORMAL'))
       if handle is Place:
-        places.append(handle.get_by_slug(item['slug'], only=['slug', 'class'], json_format=True))
+        item = handle.get_by_slug(item['slug'], only=['slug', 'class'], json_format=True)
+        if item:
+          places.append(item)
       else:
-        others.append(handle.get_by_slug(item['slug'], json_format=True))
+        try:
+          item = handle.get_by_slug(item['slug'], json_format=True)
+        except:
+          print(self.items)
+        if item:
+          others.append(item)
     return {
       'places': places,
       'others': others

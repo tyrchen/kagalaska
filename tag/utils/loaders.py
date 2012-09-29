@@ -97,8 +97,7 @@ class TagScoreLoader(object):
         tag = Tag.get_by_name(name)
 
         if not tag:
-          item = Tag(name=name, score=float(score))
-          item.save()
+          continue
         else:
           tag.set_score(score=float(score))
 
