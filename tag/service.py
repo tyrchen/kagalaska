@@ -19,13 +19,8 @@ class TagService(object):
 
   def add(self, **json_data):
     tag = self.generate_tag(**json_data)
-    try:
-      tag.save()
-    except Exception:
-      return False
-
+    tag.save()
     self.add_tag(tag)
-    return True
 
   def update(self, **json_data):
     name = json_data.get('name', '')

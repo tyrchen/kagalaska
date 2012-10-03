@@ -67,15 +67,18 @@ class WordSegFactory(protocol.Factory, ModifyMixin):
     score = float(kwargs.get('score', DEFAULT_VALUE))
     self.wordseg.add_word(name, score)
     self.relations.add(**kwargs)
+    return {'success': True}
 
   def get(self, **kwargs):
     return self.relations.get_names(**kwargs)
 
   def update(self, **kwargs):
     self.relations.add(**kwargs)
+    return {'success': True}
 
   def remove(self, **kwargs):
     self.relations.remove(**kwargs)
+    return {'success': True}
 
 def run():
   wordseg = WordSegService()

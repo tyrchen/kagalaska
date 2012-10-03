@@ -15,9 +15,12 @@ class DispatchMixin(object):
       func = getattr(item, func_name, None)
 
     if not func:
-      return ''
+      return {'success': False}
     else:
-      return func(**json_data) or {'ret': 200 }
+      try:
+        return func(**json_data) or {'success': False }
+      except Exception:
+        return {'success': False}
 
 class ModifyMixin(object):
   def update(self, **kwargs):
