@@ -18,6 +18,10 @@ class Mongoable:
   def pk(self):
     raise NotImplemented
 
+  @property
+  def pk_name(self):
+    raise NotImplemented
+
   def save(self):
     collection_name = self.__class__.__name__.lower()
 
@@ -31,7 +35,7 @@ class Mongoable:
     collection_name = self.__class__.__name__.lower()
 
     try:
-      db[collection_name].update({'name': self.pk}, obj, upsert=upsert)
+      db[collection_name].update({self.pk_name: self.pk}, obj, upsert=upsert)
     except Exception, err:
       logger.info(err)
       raise MongoDBHandleException('On Instance Update')
@@ -41,7 +45,7 @@ class Mongoable:
     collection_name = cls.__name__.lower()
 
     try:
-      db[collection_name].update({'name': name}, obj, upsert=upsert)
+      db[collection_name].update({cls.pk_name: name}, obj, upsert=upsert)
     except Exception, err:
       logger.info(err)
       raise MongoDBHandleException('On Class Update')

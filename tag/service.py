@@ -23,9 +23,8 @@ class TagService(object):
     self.add_tag(tag)
 
   def update(self, **json_data):
-    name = json_data.get('name', '')
-    self.remove(name)
-    self.add(json_data)
+    self.remove(**json_data)
+    self.add(**json_data)
 
   def remove(self, **json_data):
     name = json_data.get('name', '')

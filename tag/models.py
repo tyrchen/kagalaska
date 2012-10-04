@@ -30,6 +30,10 @@ class Place(object, Mongoable):
   def pk(self):
     return self.slug
 
+  @property
+  def pk_name(self):
+    return 'slug'
+
   @classmethod
   def get_by_slug(cls, slug, only=ONLY_MAPPING['ONLY_USEFUL'], json_format=False):
     only = only
@@ -71,6 +75,10 @@ class Normal(object, Mongoable):
   @property
   def pk(self):
     return self.slug
+
+  @property
+  def pk_name(self):
+    return 'slug'
 
   @classmethod
   def get_by_slug(cls, slug, only_slug=False, json_format=False):
@@ -130,11 +138,32 @@ class Tag(object, Mongoable, Graphical):
     self.name = name
     self.score = score
     self.items = items
+    if kwargs.has_key('place_parent'):
+      place_parent = kwargs.get('place_parent', '')
+    else:
+      place_parent = ''
+      for item in self.items:
+        if item.get('class', 'NORMAL') in ('PLACE', 'AREA', 'COUNTRY', 'CONTINENT'):
+          place = Place.get_by_slug(item.get('slug', '')) #TODO place_parent 可能有多个
+          if not place:
+            continue
+          place_parent_slug = getattr(place, 'parent_slug', '')
+          if not place_parent_slug:
+            continue
+
+          parent = Place.get_by_slug(place_parent_slug)
+          place_parent = getattr(parent, 'name', '')
+
+    self.place_parent = place_parent
     self.__dict__.update(kwargs)
 
   @property
   def pk(self):
     return self.name
+
+  @property
+  def pk_name(self):
+    return 'name'
 
   @classmethod
   def cls_set_score(cls, name, score=1.0, upsert=True):
