@@ -29,8 +29,8 @@ class Command(BaseCommand):
 
     for line in lines[1:]:
       info = line.decode('utf-8')[:-1]
-      name, score, parents_str, equal_to, items_str = info.split('\t')
-      print(name)
+      tag_name, score, parents_str, equal_to, items_str = info.split('\t')
+      print(tag_name)
       score = 1.0
       items = []
       parents = parents_str.split(',')
@@ -45,7 +45,7 @@ class Command(BaseCommand):
           'slug': name,
           'class': class_name
         })
-      tag = Tag(name=name, score=score, parents=parents, equal_to=equal_to,
+      tag = Tag(name=tag_name, score=score, parents=parents, equal_to=equal_to,
                 items=items)
       tag.save()
 
