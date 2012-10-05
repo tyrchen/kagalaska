@@ -242,18 +242,20 @@ class TagService(object):
     parents = {}
     for child, value in children:
       parent = self.get_place_parent(child)
+      parent_value = value + 0.01 # 让父级浮出
+
       if not parent:
         continue
 
       elif parent in parents:
-        parents[parent] += value
+        parents[parent] += parent_value
       else:
         parents.update({
-          parent: value
+          parent: parent_value
         })
     return parents
 
-  def clusters(self, tags, origin, top_n=1):
+  def clusters(self, tags, origin, top_n=1): # 还没用到所有的分词和限制个数 TODO
     guessed_places, guessed_cities, guessed_normal = self.guess(tags)
     places = {}
     others = {}

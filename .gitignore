@@ -1,7 +1,7 @@
 *.pyc
 .idea
 tests
-logs/*.log
+logs/*.log*
 tmp
 src
 build
