@@ -26,9 +26,11 @@ MONGO_PORT = 27017
 MONGO_DB = 'kagalaska'
 
 # DEFAULTS
-NEW_WORD_DEFAULT_VALUE = 6.0
-TITLE_WEIGHT = 2.0
-CONTENT_WEIGHT = 1.0
+NEW_WORD_DEFAULT_VALUE = 1.0 # any tag added, the score is 1.0
+TITLE_WEIGHT = 2.0 # weight of title
+CONTENT_WEIGHT = 1.0 # weight of content
+FILTER_THRESHOLD = 0.03 # tags score gt 0.03 will be available
+TOP_N = 3 # return 3 top places and 3 normal tags.
 
 DEBUG = True
 TEMPLATE_DEBUG = DEBUG

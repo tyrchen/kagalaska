@@ -63,6 +63,17 @@ class Place(object, Mongoable):
   def to_dict(self):
     return vars(self)
 
+  @classmethod
+  def get_parent_by_slug(cls, slug):
+    place = cls.get_by_slug(slug)
+    if not place:
+      return None
+    parent_slug = getattr(place, 'parent_slug', '')
+    if not parent_slug:
+      return None
+    parent = cls.get_by_slug(parent_slug)
+    return parent
+
 class Normal(object, Mongoable):
   indexes = [
     ({'slug': 1}, {'unique': True})
@@ -138,23 +149,22 @@ class Tag(object, Mongoable, Graphical):
     self.name = name
     self.score = score
     self.items = items
+    proxy = 'NORMAL'
     if kwargs.has_key('place_parent'):
       place_parent = kwargs.get('place_parent', '')
     else:
       place_parent = ''
       for item in self.items:
         if item.get('class', 'NORMAL') in ('PLACE', 'AREA', 'COUNTRY', 'CONTINENT'):
-          place = Place.get_by_slug(item.get('slug', '')) #TODO place_parent 可能有多个
-          if not place:
+          proxy = item.get('class', 'NORMAL')
+          parent_instance = Place.get_parent_by_slug(item.get('slug', ''))
+          if not parent_instance:
             continue
-          place_parent_slug = getattr(place, 'parent_slug', '')
-          if not place_parent_slug:
-            continue
-
-          parent = Place.get_by_slug(place_parent_slug)
-          place_parent = getattr(parent, 'name', '')
+          else:
+            place_parent = getattr(parent_instance, 'name_zh', '')
 
     self.place_parent = place_parent
+    self.proxy = proxy
     self.__dict__.update(kwargs)
 
   @property

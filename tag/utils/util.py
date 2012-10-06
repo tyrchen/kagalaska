@@ -20,10 +20,11 @@ def to_unicode(obj):
     return obj
 
 def smart_print(items, name):
-  print("########## %s ##########" % name)
-  if isinstance(items, list):
+  if name:
+    print("########## %s ##########" % name)
+  if isinstance(items, (list, tuple)):
     for item in items:
-      print(item)
+      smart_print(item, None)
   elif isinstance(items, dict):
     for key, value in items.items():
       print(key, value)

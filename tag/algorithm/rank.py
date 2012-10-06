@@ -6,6 +6,10 @@ from mixins.aggregations import AggregationMixin
 from tag.service import TagService
 from tag.services.wordseg import BaseSeg
 from tag.utils.util import smart_print
+from django.conf import settings
+
+FILTER_THRESHOLD = getattr(settings, 'FILTER_THRESHOLD', 0.03)
+TOP_N = getattr(settings, 'TOP_N', 3)
 
 class LazyRank(AggregationMixin):
   def __init__(self, contents, seg_ref, tag_service_ref, tf_idf=True, **kwargs):
@@ -33,7 +37,7 @@ class LazyRank(AggregationMixin):
       total += value
 
     top_tags_list = []
-    threshold = 0.05
+    threshold = FILTER_THRESHOLD
 
     for key, value in tags.items():
       # 根据阈值过滤
@@ -64,7 +68,7 @@ class LazyRank(AggregationMixin):
     filtered_tags = self.filter(tags_dict)
 
     top_n_tags_list = self.ranking(filtered_tags, top=10) # 将聚合结果排名
-    places, others = self.clusters(top_n_tags_list, filtered_tags) # 根据权重得出最权威的places和其他信息
+    places, others = self.clusters(top_n_tags_list, filtered_tags, top_n=TOP_N) # 根据权重得出最权威的places和其他信息
 
     result = self.format(places, others)
     return result # 返回formatted的数据

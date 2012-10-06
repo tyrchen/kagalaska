@@ -169,7 +169,7 @@ class TagService(object):
 
     return tag.get('place_parent', None)
 
-  def guess(self, tags):
+  def guess(self, tags, top_n=1):
     countries = []
     cities = []
     places = []
@@ -186,8 +186,8 @@ class TagService(object):
       elif proxy == 'PLACE':
         places.append((name, value))
 
-    guessed_places, guessed_cities = self.do_guess_places(countries, cities, places)
-    guessed_normals = self.do_guess_normals(normals)
+    guessed_places, guessed_cities = self.do_guess_places(countries, cities, places, top_n)
+    guessed_normals = self.do_guess_normals(normals, top_n)
     return guessed_places, guessed_cities, guessed_normals
 
   def do_guess_places(self, countries, cities, places, top=1):
@@ -224,7 +224,7 @@ class TagService(object):
       return top_country, []
     else:
       result = []
-      result.extend(top_places)
+      result.extend(top_places[: top-1])
       result.extend(top_city)
       return result, top_city
 
@@ -236,7 +236,7 @@ class TagService(object):
       parents = self.get_parents(key)
       for parent in parents:
         available.append((parent, value))
-    return available
+    return available[:top]
 
   def guess_parents(self, children):
     parents = {}
@@ -256,7 +256,7 @@ class TagService(object):
     return parents
 
   def clusters(self, tags, origin, top_n=1): # 还没用到所有的分词和限制个数 TODO
-    guessed_places, guessed_cities, guessed_normal = self.guess(tags)
+    guessed_places, guessed_cities, guessed_normal = self.guess(tags, top_n)
     places = {}
     others = {}
 
