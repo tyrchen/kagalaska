@@ -73,7 +73,8 @@ class WordSegFactory(protocol.Factory, ModifyMixin):
     return self.relations.get_names(**kwargs)
 
   def update(self, **kwargs):
-    self.relations.update(**kwargs)
+    self.remove(**kwargs)
+    self.add(**kwargs)
     return {'success': True}
 
   def remove(self, **kwargs):
