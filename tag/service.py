@@ -218,7 +218,7 @@ class TagService(object):
     available_cities = [city for city, _ in top_city]
     for place, value in places:
       if self.get_place_parent(place) in available_cities:
-        top_places.append((place, value))
+        top_places.append((place, value + 0.01))
 
     if not top_places and not top_city:
       return top_country, []
@@ -235,7 +235,7 @@ class TagService(object):
     for key, value in available:
       parents = self.get_parents(key)
       for parent in parents:
-        available.append((parent, value))
+        available.append((parent, value + 0.01))
     return available[:top]
 
   def guess_parents(self, children):

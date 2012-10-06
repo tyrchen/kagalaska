@@ -5,7 +5,6 @@ from __future__ import division, unicode_literals, print_function
 from mixins.aggregations import AggregationMixin
 from tag.service import TagService
 from tag.services.wordseg import BaseSeg
-from tag.utils.util import smart_print
 from django.conf import settings
 
 FILTER_THRESHOLD = getattr(settings, 'FILTER_THRESHOLD', 0.03)
