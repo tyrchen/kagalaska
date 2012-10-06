@@ -212,13 +212,13 @@ class TagService(object):
     top_places = []
     for city, value in top_cities:
       if self.get_place_parent(city) in available_country:
-        top_city.append((city, value))
+        top_city.append((city, value + 1))
         break
 
     available_cities = [city for city, _ in top_city]
     for place, value in places:
       if self.get_place_parent(place) in available_cities:
-        top_places.append((place, value + 0.01))
+        top_places.append((place, value))
 
     if not top_places and not top_city:
       return top_country, []
