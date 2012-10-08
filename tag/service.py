@@ -2,9 +2,10 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
+import copy
 from tag.models import Tag, Place
 from django.conf import settings
-from tag.utils.util import rank_dict
+from tag.utils.util import rank_dict, dict_from_items
 
 DEFAULT_VALUE = settings.NEW_WORD_DEFAULT_VALUE
 
@@ -231,12 +232,26 @@ class TagService(object):
   def do_guess_normals(self, normals, top=1):
     if not normals:
       return []
-    available = normals[0:1]
+
+    available = normals[0: top]
+    normal_tags_dict = {}
+    dict_from_items(normal_tags_dict, available)
+
     for key, value in available:
       parents = self.get_parents(key)
       for parent in parents:
         available.append((parent, value + 0.01))
-    return available[:top]
+
+    while available:
+      parents_list = []
+      for key, value in available:
+        parents = self.get_parents(key)
+        for parent in parents:
+          parents_list.append((parent, value + 0.01))
+      dict_from_items(normal_tags_dict, parents_list)
+      available = copy.deepcopy(parents_list)
+
+    return rank_dict(normal_tags_dict, top=top)
 
   def guess_parents(self, children):
     parents = {}

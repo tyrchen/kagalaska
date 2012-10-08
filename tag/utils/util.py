@@ -19,15 +19,15 @@ def to_unicode(obj):
   else:
     return obj
 
-def smart_print(items, name):
+def smart_print(items, name=None):
   if name:
     print("########## %s ##########" % name)
   if isinstance(items, (list, tuple)):
     for item in items:
-      smart_print(item, None)
+      smart_print(item)
   elif isinstance(items, dict):
-    for key, value in items.items():
-      print(key, value)
+    for item in items.items():
+      smart_print(item)
   else:
     print(items)
 
@@ -35,13 +35,21 @@ def rank_dict(aim_dict, top=0):
   items = aim_dict.items()
 
   def cmp(a, b):
-    return int(a[1] - b[1])
+    return -1 if a[1] < b[1] else 1
   sorted_items = sorted(items, cmp=cmp, reverse=True)
 
-  if not top:
+  if top <= 0:
     return sorted_items
   else:
-    return sorted_items[:top] if len(sorted_items) > top else sorted_items
+    return sorted_items[:top]
+
+def dict_from_items(aim_dict, items):
+  for key, value in items:
+    if key in aim_dict:
+      aim_dict[key] += value
+    else:
+      aim_dict[key] = value
+  return aim_dict
 
 class TagFileHelper(object):
   def load_from_file(self):
