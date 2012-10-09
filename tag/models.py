@@ -12,6 +12,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Place(object, Mongoable):
+  pk_name =  'slug'
+
   indexes = [
      ({'slug': 1}, {'unique': True})
   ]
@@ -29,10 +31,6 @@ class Place(object, Mongoable):
   @property
   def pk(self):
     return self.slug
-
-  @property
-  def pk_name(self):
-    return 'slug'
 
   @classmethod
   def get_by_slug(cls, slug, only=ONLY_MAPPING['ONLY_USEFUL'], json_format=False):
@@ -60,6 +58,33 @@ class Place(object, Mongoable):
     else:
       return None
 
+  def update(self, **kwargs):
+    proxy = kwargs.pop('proxy', 'PLACE')
+    obj = {}
+    for key, value in kwargs.items():
+      obj.update({
+        '$set': {
+          key: value
+        }
+      })
+    obj.update({'$set': {'class': proxy}})
+
+    super(Place, self).update(obj=obj)
+
+  @classmethod
+  def cls_update(cls, slug, **kwargs):
+    proxy = kwargs.pop('proxy', 'PLACE')
+    obj = {}
+    for key, value in kwargs.items():
+      obj.update({
+        '$set': {
+          key: value
+        }
+      })
+    obj.update({'$set': {'class': proxy}})
+
+    super(Place, cls).cls_update(name=slug, obj=obj)
+
   def to_dict(self):
     return vars(self)
 
@@ -75,6 +100,8 @@ class Place(object, Mongoable):
     return parent
 
 class Normal(object, Mongoable):
+  pk_name = 'slug'
+
   indexes = [
     ({'slug': 1}, {'unique': True})
   ]
@@ -86,10 +113,6 @@ class Normal(object, Mongoable):
   @property
   def pk(self):
     return self.slug
-
-  @property
-  def pk_name(self):
-    return 'slug'
 
   @classmethod
   def get_by_slug(cls, slug, only_slug=False, json_format=False):
@@ -123,6 +146,7 @@ class Tag(object, Mongoable, Graphical):
   @ proxy NORMAL or PLACE or AREA or COUNTRY or CONTINENT
   @ items: [{slug: 'bei-jing-bei-jing-di-qu-china, 'class':'AREA' },]
   """
+  pk_name = 'name'
 
   indexes = [
       ({'name': 1}, {'unique': True})
@@ -170,10 +194,6 @@ class Tag(object, Mongoable, Graphical):
   @property
   def pk(self):
     return self.name
-
-  @property
-  def pk_name(self):
-    return 'name'
 
   @classmethod
   def cls_set_score(cls, name, score=1.0, upsert=True):

@@ -8,6 +8,7 @@ from tag.algorithm.rank import LazyRank
 from tag.service import TagService
 from tag.services.wordseg import BaseSeg
 from mixins import ModifyMixin, DispatchMixin
+from tag.models import Place
 
 import json
 import logging
@@ -80,6 +81,14 @@ class WordSegFactory(protocol.Factory, ModifyMixin):
   def remove(self, **kwargs):
     self.relations.remove(**kwargs)
     return {'success': True}
+
+  def place_update(self, **kwargs):
+    try:
+      Place.cls_update(**kwargs)
+    except Exception:
+      return {'success': False}
+    else:
+      return {'success': True}
 
 def run():
   wordseg = WordSegService()

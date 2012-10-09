@@ -14,12 +14,10 @@ connection = pymongo.Connection(host=settings.MONGO_HOST, port=settings.MONGO_PO
 db = connection[settings.MONGO_DB]
 
 class Mongoable:
-  @property
-  def pk(self):
-    raise NotImplemented
+  pk_name = None
 
   @property
-  def pk_name(self):
+  def pk(self):
     raise NotImplemented
 
   def save(self):
@@ -35,7 +33,8 @@ class Mongoable:
     collection_name = self.__class__.__name__.lower()
 
     try:
-      db[collection_name].update({self.pk_name: self.pk}, obj, upsert=upsert)
+      db[collection_name].update({self.__class__.pk_name:
+                                    self.pk}, obj, upsert=upsert)
     except Exception, err:
       logger.info(err)
       raise MongoDBHandleException('On Instance Update')
