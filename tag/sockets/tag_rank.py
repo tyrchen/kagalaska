@@ -84,7 +84,11 @@ class WordSegFactory(protocol.Factory, ModifyMixin):
 
   def place_update(self, **kwargs):
     try:
-      Place.cls_update(**kwargs)
+      slug = kwargs.pop('slug', '')
+      if not slug:
+        return {'success': False}
+
+      Place.cls_update(slug, **kwargs)
     except Exception:
       return {'success': False}
     else:

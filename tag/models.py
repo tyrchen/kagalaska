@@ -63,13 +63,11 @@ class Place(object, Mongoable):
     obj = {}
     for key, value in kwargs.items():
       obj.update({
-        '$set': {
-          key: value
-        }
+        key: value
       })
-    obj.update({'$set': {'class': proxy}})
+    obj.update({'class': proxy})
 
-    super(Place, self).update(obj=obj)
+    super(Place, self).update(obj={'$set': obj})
 
   @classmethod
   def cls_update(cls, slug, **kwargs):
@@ -77,13 +75,10 @@ class Place(object, Mongoable):
     obj = {}
     for key, value in kwargs.items():
       obj.update({
-        '$set': {
           key: value
-        }
       })
-    obj.update({'$set': {'class': proxy}})
-
-    super(Place, cls).cls_update(name=slug, obj=obj)
+    obj.update({'class': proxy})
+    super(Place, cls).cls_update(name=slug, obj={'$set': obj})
 
   def to_dict(self):
     return vars(self)
