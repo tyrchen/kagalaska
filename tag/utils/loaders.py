@@ -9,14 +9,15 @@ import json
 import os
 
 HOME = settings.DATA_PATH
-ORIGIN_PATH = os.path.join(HOME, 'baseinfo.csv')
+#ORIGIN_PATH = os.path.join(HOME, 'baseinfo.csv')
+ORIGIN_PATH = '/home/toureet/Desktop/baseinfo.csv'
 DEFAULT_SCORE = 8
 
 class PlaceInfoLoader(object):
   def __init__(self, origin_path=None):
     self.origin_path = origin_path if origin_path else ORIGIN_PATH
 
-  def load(self, to_db=False, to_tag=False):
+  def load(self, to_db=False, to_tag=False, delete=False):
     with open(name=self.origin_path, mode='r') as f:
       for each_line in f.readlines():
         json_data = json.loads(each_line[:-1])
@@ -25,33 +26,39 @@ class PlaceInfoLoader(object):
           continue
 
         try:
-          print(json_data['name_zh'])
+          slug = json_data.pop('slug')
+          if delete:
+            place = Place.get_by_slug(slug)
+            if place:
+              print("Will delete %s" %slug)
+              place.remove()
+            name_zh = json_data['name_zh']
+            tag = Tag.get_by_name(name_zh)
+            if tag:
+              print("Will delete %s" %name_zh)
+              tag.remove()
+
           if to_db:
-            slug = json_data.pop('slug')
-            place = Place(slug=slug, **json_data)
-            place.save()
+            exists = Place.get_by_slug(slug=slug, json_format=True)
+            if not exists:
+              print(json_data['name_zh'])
+              place = Place(slug=slug, **json_data)
+              place.save()
 
           if to_tag:
-            slug = json_data.pop('slug')
             class_name = json_data.pop('class')
-            name = json_data.pop('name_zh')
+            name = json_data.get('name_zh', '')
             item = {'slug': slug, 'class': class_name}
             categories = json_data.get('categories', '')
             tag_type = class_name
-            try:
-              parent_slug = json_data.get('parent_slug', '')
-              parent = Place.get_by_slug(parent_slug, json_format=True)
-              place_parent = parent.get('name_zh', '')
-            except Exception:
-              place_parent = ''
+            exists = Tag.get_by_name(name, json_format=True)
+            if exists:
+              print("存在 %s" %name)
+              continue
 
-            if not place_parent:
-              tag = Tag(name=name, items=[item], score=float(DEFAULT_SCORE),
-                        parents=categories, proxy=tag_type)
-            else:
-              tag = Tag(name=name, items=[item], score=float(DEFAULT_SCORE),
-                        place_parent=place_parent, parents=categories,
-                        proxy=tag_type)
+            print(json_data['name_zh'])
+            tag =   Tag(name=name, items=[item], score=float(DEFAULT_SCORE),
+                      parents=categories, proxy=tag_type)
 
             tag.save()
             
