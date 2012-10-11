@@ -19,17 +19,20 @@ def to_unicode(obj):
   else:
     return obj
 
-def smart_print(items, name=None):
+def _smart_print(items, name=None):
   if name:
     print("########## %s ##########" % name)
   if isinstance(items, (list, tuple)):
     for item in items:
-      smart_print(item)
+      _smart_print(item)
   elif isinstance(items, dict):
     for item in items.items():
-      smart_print(item)
+      _smart_print(item)
   else:
     print(items)
+
+def smart_print(items, name=None):
+  pass
 
 def rank_dict(aim_dict, top=0):
   items = aim_dict.items()

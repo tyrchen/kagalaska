@@ -6,6 +6,7 @@ from mixins.aggregations import AggregationMixin
 from tag.service import TagService
 from tag.services.wordseg import BaseSeg
 from django.conf import settings
+from tag.utils.util import smart_print
 
 FILTER_THRESHOLD = getattr(settings, 'FILTER_THRESHOLD', 0.03)
 TOP_N = getattr(settings, 'TOP_N', 3)
@@ -64,12 +65,18 @@ class LazyRank(AggregationMixin):
 
     # 将分词结果聚合
     tags_dict = self.aggregation(*tags_list)  # {'北京': 5}
+    smart_print(tags_dict, "标签聚合")
     filtered_tags = self.filter(tags_dict)
+    smart_print(filtered_tags, "标签filter")
 
     top_n_tags_list = self.ranking(filtered_tags, top=10) # 将聚合结果排名
+    smart_print(top_n_tags_list, "排名前N")
     places, others = self.clusters(top_n_tags_list, filtered_tags, top_n=TOP_N) # 根据权重得出最权威的places和其他信息
+    smart_print(places, "地点")
+    smart_print(others, "其他")
 
     result = self.format(places, others)
+    smart_print(result, "结果")
     return result # 返回formatted的数据
 
 def test():
