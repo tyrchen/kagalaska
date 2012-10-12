@@ -3,56 +3,202 @@
 
 from __future__ import division, unicode_literals, print_function
 import copy
-from tag.models import Tag, Place
+from tag.models import Tag, Place, Normal
 from django.conf import settings
 from tag.utils.util import rank_dict, dict_from_items, smart_print
 
 DEFAULT_VALUE = settings.NEW_WORD_DEFAULT_VALUE
 
-class TagService(object):
+class Record(object):
+  def __init__(self):
+    self.tags_dict = {}
+    self.slug_dict = {}
 
-  class InMemoryTag(object):
-    def __init__(self, name, service_ref=None):
-      self.service = service_ref
-      tag = self.service.tags.get(name, {})
-      real_tag = tag.get('equal_to', '')
-      real_name = real_tag or name
-      tag = self.service.tags.get(real_name, {})
-      self.__dict__.update(tag)
+  def add(self, name, slugs):
+    if isinstance(slugs, list):
+      self.tags_dict.update({name: slugs})
+      for slug in slugs:
+        self.slug_dict.update({slug: name})
+    else:
+      self.tags_dict.update({name: slugs})
+      self.slug_dict.update({slugs: name})
 
-    def get_name(self):
-      return getattr(self, 'name', '')
+  def get_tag(self, slug):
+    return self.slug_dict.get(slug, '')
 
-    def get_place_parent(self):
-      place_parent_name = getattr(self, 'place_parent', '')
-      return self.service.InMemoryTag(place_parent_name, self.service)
+  def get_items(self, name):
+    return self.tags_dict.get(name, [])
 
-    def get_proxy(self):
-      return getattr(self, 'proxy', 'NORMAL')
+class PlaceItemEntity(object):
+  def __init__(self, slug, tag_name, **kwargs):
+    self.slug = slug
+    self.tag_name = tag_name
+    self.category = kwargs.pop('class', 'PLACE')
+    self.do_init(**kwargs)
 
-    def get_parents(self):
-      parent_names = getattr(self, 'parents', [])
-      parents = []
-      for name in parent_names:
-        parents.append(self.service.InMemoryTag(name, self.service))
-      return parents
+  def __unicode__(self):
+    return self.__dict__
 
-    def get_items(self):
-      item_ref = getattr(self, 'items', [])
-      item_names = [item['slug'] for item in item_ref]
-      items = filter(None, [self.service.items.get(item_name, None)
-                           for item_name in item_names])
-      if not items:
-        return {}
+  def do_init(self, **kwargs):
+    self.__dict__.update(kwargs)
+
+  def get_parent_slug(self):
+    return getattr(self, 'parent_slug', '')
+
+  @classmethod
+  def direct_relation(cls, item_from, item_to):
+    item_from_parent_slug = item_from.get_parent_slug()
+    if_relation = bool(item_from_parent_slug) and item_from_parent_slug == item_to.slug
+    return if_relation
+
+class NormalItemEntity(object):
+  def __init__(self, slug, tag_name, parents=[], **kwargs):
+    kwargs.pop('class', '')
+    self.slug = slug
+    self.tag_name = tag_name
+    self.parents = parents
+    self.category = 'NORMAL'
+    self.__dict__.update(kwargs)
+
+  @classmethod
+  def direct_relation(cls, item_from, item_to):
+    parent_slug = item_to.slug
+    return parent_slug in item_from.parents
+
+class InMemoryItems(object):
+  def __init__(self):
+    self.items = {}
+
+  def add(self, slug, item_instance):
+    self.items.update({slug: item_instance})
+
+  def get(self, slug):
+    return self.items.get(slug, None)
+
+  def exists(self, slug):
+    return self.items.has_key(slug)
+
+  def place_parent(self, place_item):
+    parent_slug = place_item.get_parent_slug()
+    return self.get(parent_slug)
+
+  def place_all_parents(self, slug, value, increment=0.1):
+    smart_print(slug, "in place_all_parents")
+    exists = self.exists(slug)
+    if not exists:
+      return [], [], []
+
+    origin = self.get(slug)
+    if origin.category == 'NORMAL':
+      return [], [], []
+
+    countries = []
+    cities = []
+    places = []
+    if origin.category == 'PLACE':
+      places.append((origin, value))
+    elif origin.category == 'AREA':
+      cities.append((origin, value))
+    else:
+      countries.append((origin, value))
+
+    value += increment
+    for place, _ in places:
+      parent = self.place_parent(place)
+      if not parent:
+        continue
+
+      cities.append((parent, value))
+    value += increment
+
+    for city, _ in cities:
+      parent = self.place_parent(city)
+      if not parent:
+        continue
+
+      countries.append((parent, value))
+
+    return places, cities, countries
+
+  def normal_parents(self, normal_item, value, increment=0.1):
+    parent_names = normal_item.parents
+    parents = []
+    available = []
+
+    value += increment
+    for name in parent_names:
+      parent = self.get(name)
+      if not parent:
+        continue
       else:
-        return items[0]
+        parents.append((parent, value))
+        available.append((parent, value))
 
-    def tag_info(self):
-      return self.service.tags.get(self.get_name(), {})
+    while available:
+      temp = []
+      for item, item_value in available:
+        available_parents = self.normal_parents(item, item_value+increment)
+        parents.extend(available_parents)
+        temp.extend(available_parents)
+      available = temp
 
+    return parents
+
+  def normal_all_parents(self, slug, value, increment=0.1):
+    exists = self.exists(slug)
+    if not exists:
+      return []
+
+    origin = self.get(slug)
+    if origin.category != 'NORMAL':
+      return []
+
+    parents = self.normal_parents(origin, value, increment)
+    return parents
+
+class TagEntity(object):
+  def __init__(self, name, score=1.0,
+               equal_to='', parents=[], items=[]):
+    self.name = name
+    self.equal_to = equal_to
+    self.parents = parents
+    self.score = score
+    self.items = items
+
+  def __unicode__(self):
+    return self.__dict__
+
+class InMemoryTags(object):
   def __init__(self):
     self.tags = {}
-    self.items = {}
+
+  def add(self, name, tag_instance):
+    self.tags.update({name: tag_instance})
+
+  def get(self, name):
+    instance = self.tags.get(name, None)
+    if not instance:
+      return None
+
+    equal_to = instance.equal_to
+    if equal_to:
+      return self.get(equal_to)
+    else:
+      return instance
+
+  def exists(self, name):
+    return self.tags.has_key(name)
+
+  def delete(self, name):
+    exists = self.exists(name)
+    if exists:
+      del self.tags[name]
+
+class TagService(object):
+  def __init__(self):
+    self.memory_tags = InMemoryTags()
+    self.memory_normal_items = InMemoryItems()
+    self.memory_place_items = InMemoryItems()
     self.to_cache()
 
   def generate_tag(self, name, score=DEFAULT_VALUE, items=[], **kwargs):
@@ -61,7 +207,7 @@ class TagService(object):
   def add(self, **json_data):
     tag = self.generate_tag(**json_data)
     tag.save()
-    self.add_tag(tag)
+    self.add_tag(tag, force_add=True)
 
   def update(self, **json_data):
     self.remove(**json_data)
@@ -69,10 +215,10 @@ class TagService(object):
 
   def remove(self, **json_data):
     name = json_data.get('name', '')
-    if not name in self.tags:
+    if not self.memory_tags.exists(name):
       return
 
-    del self.tags[name]
+    self.memory_tags.delete(name)
     tag = Tag.get_by_name(name)
     tag.remove()
 
@@ -93,69 +239,55 @@ class TagService(object):
     for tag in Tag.objects():
       self.add_tag(tag)
 
-  def add_tag(self, tag):
+  def add_tag(self, tag, force_add=False):
     name = tag.name
+    if not name:
+      return
+
+    score = getattr(tag, 'score', 1.0)
     parents = getattr(tag, 'parents', [])
-    items_dict = tag.get_items()
-    items = items_dict['places'] or items_dict['others']
-    place_parent = getattr(tag, 'place_parent', '')
+    items = getattr(tag, 'items', [])
+    instance_items = []
     equal_to = getattr(tag, 'equal_to', '')
-    proxy = getattr(tag, 'proxy', 'NORMAL')
-    self.tags.update({
-      name: {
-        'name': name,
-        'parents': parents,
-        'items': items,
-        'place_parent': place_parent,
-        'equal_to': equal_to,
-        'proxy': proxy
-      }
-      })
-
     for item in items:
-      if self.has_slug(item['slug']):
+      slug = item['slug'] or name
+      if (not force_add) and (self.memory_normal_items.exists(slug) or self.memory_place_items.exists(slug)):
         continue
 
-      obj = Place.get_by_slug(item['slug'], json_format=True)
-      if not obj:
-        continue
+      category = item['class']
+      if category == 'NORMAL':
+        item_info = Normal.get_by_slug(slug, json_format=True)
+        if not item_info:
+          continue
 
-      slug = obj.get('slug', '')
-      if not slug:
-        continue
+        item_instance = NormalItemEntity(tag_name=name, parents=parents, **item_info)
+        self.memory_normal_items.add(slug, item_instance)
+      else:
+        item_info = Place.get_by_slug(slug, json_format=True)
+        if not item_info:
+          continue
 
-      self.items.update({slug: obj})
+        item_instance = PlaceItemEntity(tag_name=name, **item_info)
+        self.memory_place_items.add(slug, item_instance)
+      instance_items.append(item_instance)
 
-  def has_slug(self, slug):
-    return self.items.has_key(slug)
+    tag_instance = TagEntity(name, score=score, equal_to=equal_to,
+                                 parents=parents, items=instance_items)
+    self.memory_tags.add(name, tag_instance)
 
-  def exists_tag(self, tag):
-    return self.tags.has_key(tag)
 
   def filter(self, tags_dict):
     validated_dict = {}
     for name in tags_dict.keys():
-      tag_item = self.InMemoryTag(name, self)
-      tag_name = tag_item.get_name()
-      if not tag_name or len(tag_name) < 2:
+      tag_item = self.memory_tags.get(name)
+      if not tag_item or len(tag_item.name) < 2:
         continue
 
       validated_dict.update({
-        tag_name: tags_dict[tag_name]
+        tag_item: tags_dict[name]
       })
 
     return validated_dict
-
-  def get_city_or_normal(self, name, normal=True):
-    tag = self.InMemoryTag(name, self)
-    tag_type = tag.get_proxy()
-    if tag_type == 'PLACE':
-      place_parent = tag.get_place_parent()
-    elif tag_type == 'AREA' or (tag_type == 'NORMAL' and normal):
-      place_parent = tag.get_name()
-    else:
-      place_parent = ''
-    return place_parent or None
 
   def guess(self, tags, top_n=1):
     countries = []
@@ -163,63 +295,77 @@ class TagService(object):
     places = []
     normals = []
 
-    for name, value in tags:
-      tag_item = self.InMemoryTag(name, self)
-      proxy = tag_item.get_proxy()
-      if proxy == 'NORMAL':
-        normals.append((tag_item.get_name(), value))
-      elif proxy == 'COUNTRY':
-        countries.append((tag_item.get_name(), value))
-      elif proxy == 'AREA':
-        cities.append((tag_item.get_name(), value))
-      elif proxy == 'PLACE':
-        places.append((tag_item.get_name(), value))
+    smart_print(tags, "in guess tags")
+    for tag, value in tags:
+      items = tag.items
+      smart_print(items, "tag_items")
+      for item in items:
+        category = item.category
+        if category == 'NORMAL':
+          normals.append((item, value))
+        else:
+          item_places, item_cities, item_countries \
+          = self.memory_place_items.place_all_parents(item.slug, value)
+          countries.extend(item_countries)
+          cities.extend(item_cities)
+          places.extend(item_places)
 
+      for parent_name in tag.parents:
+        parent = self.memory_normal_items.get(parent_name)
+        if not parent:
+          continue
+        else:
+          normals.append((parent, value))
+
+    smart_print(countries, "countries")
+    smart_print(cities, 'cities')
+    smart_print(places, 'places')
+    smart_print(normals, 'normals')
     guessed_places, guessed_cities = self.do_guess_places(countries, cities, places, top_n)
+    smart_print(guessed_places, "guessed places")
+    smart_print(guessed_cities, "guessed cities")
     guessed_normals = self.do_guess_normals(normals, top_n)
+    smart_print(guessed_normals, "guessed normals")
     return guessed_places, guessed_cities, guessed_normals
 
   def do_guess_places(self, countries, cities, places, top=1):
-    guessed_cities = self.guess_parents(places)
-    def merge_items_to_dict(items, aim_dict):
-      for item, value in items:
-        if item in aim_dict:
-          aim_dict[item] += value
-        else:
-          aim_dict.update({
-            item: value
-          })
-      return aim_dict
+    countries_dict = {}
+    cities_dict = {}
+    places_dict = {}
+    dict_from_items(countries_dict, countries)
+    dict_from_items(cities_dict, cities)
+    dict_from_items(places_dict, places)
+    smart_print(countries_dict, "countries_dict")
+    smart_print(cities_dict, "cities_dict")
+    smart_print(places_dict, "places_dict")
 
-    guessed_cities = merge_items_to_dict(cities, guessed_cities)
-    smart_print(guessed_cities, "In do guess places, guess cities")
-    guessed_countries = self.guess_parents(guessed_cities.items())
-    guessed_countries = merge_items_to_dict(countries, guessed_countries)
-    top_country = rank_dict(guessed_countries, top=1)
-    smart_print(top_country, "top_country")
-    available_country = [country for country, _ in top_country]
-    top_cities = rank_dict(guessed_cities)
+    top_country = rank_dict(countries_dict, top=1)
+    available_countries = [country for country, _ in top_country]
+
+    top_cities = rank_dict(cities_dict, top=top)
     top_city = []
-    top_places = []
     for city, value in top_cities:
-      city_tag = self.InMemoryTag(city, self)
-      smart_print(city_tag.__dict__, city_tag.get_name())
-      parent = city_tag.get_place_parent()
-      if parent.get_name() in available_country:
-        top_city.append((city_tag.get_name(), value + 1))
+      relations = []
+      for available_country in available_countries:
+        relation = PlaceItemEntity.direct_relation(city, available_country)
+        relations.append(relation)
+      if any(relations):
+        top_city.append((city, value))
         break
 
     available_cities = [city for city, _ in top_city]
-    smart_print(available_cities, "available_cities")
+    top_places = []
+
     for place, value in places:
-      place_tag = self.InMemoryTag(place, self)
-      parent = place_tag.get_place_parent()
-      if parent.get_name() in available_cities:
-        top_places.append((place_tag.get_name(), value))
+      relations = []
+      for city in available_cities:
+        relation = PlaceItemEntity.direct_relation(place, city)
+        relations.append(relation)
+      if any(relations):
+        top_places.append((place, value))
 
     if not top_places and not top_city:
       return top_country, []
-
     else:
       result = []
       result.extend(top_places[: top-1])
@@ -230,49 +376,27 @@ class TagService(object):
     if not normals:
       return []
 
+    smart_print(normals, "in guess normals")
     available = normals[0: top]
     normal_tags_dict = {}
     dict_from_items(normal_tags_dict, available)
+    parents_list = []
 
-    for key, value in available:
-      normal_tag = self.InMemoryTag(key, self)
-      parents = normal_tag.get_parents()
-      for parent in parents:
-        if parent.get_name():
-          available.append((parent.get_name(), value + 0.01))
+    for normal_item, value in available:
+      parents_list.extend(self.memory_normal_items.normal_all_parents(normal_item.slug, value))
+    smart_print(parents_list, "parent_list")
+    dict_from_items(normal_tags_dict, parents_list)
 
-    while available:
-      parents_list = []
-      for key, value in available:
-        available_tag = self.InMemoryTag(key, self)
-        parents = available_tag.get_parents()
-        for parent in parents:
-          if parent.get_name():
-            parents_list.append((parent.get_name(), value + 0.01))
-
-      dict_from_items(normal_tags_dict, parents_list)
-      available = copy.deepcopy(parents_list)
+    top_normals = rank_dict(normal_tags_dict, top=1)
+    for key, _ in normal_tags_dict.items():
+      relations = []
+      for top_normal, _ in top_normals:
+        relation = top_normal == key or NormalItemEntity.direct_relation(key, top_normal)
+        relations.append(relation)
+      if not any(relations):
+        del normal_tags_dict[key]
 
     return rank_dict(normal_tags_dict, top=top)
-
-  def guess_parents(self, children):
-    parents = {}
-    for child, value in children:
-      tag_item = self.InMemoryTag(child, self)
-      parent = tag_item.get_place_parent()
-      parent_value = value + 0.01 # 让父级浮出
-
-      if not parent.get_name():
-        continue
-
-      elif parent in parents:
-        parents[parent.get_name()] += parent_value
-      else:
-        parents.update({
-          parent.get_name(): parent_value
-        })
-    return parents
-
 
   def clusters(self, tags, origin, top_n=1): # 还没用到所有的分词和限制个数 TODO
     smart_print(tags, 'cluster tags')
@@ -305,19 +429,17 @@ class TagService(object):
     hide = {}
     cities = {}
 
-    for name, score in places.items():
-      tag = self.InMemoryTag(name, self)
-      class_name = tag.get_proxy()
-      if class_name == 'AREA':
-        item_dict = self.do_format(name, score)
+    for place_item, score in places.items():
+      if place_item.category == 'AREA':
+        item_dict = self.do_format(place_item, score)
         show.update(item_dict)
         cities.update(item_dict)
       else:
-        item_dict = self.do_format(name, score)
+        item_dict = self.do_format(place_item, score)
         show.update(item_dict)
 
-    for name, score in others.items():
-      item_dict = self.do_format(name, score)
+    for normal_item, score in others.items():
+      item_dict = self.do_format(normal_item, score)
       show.update(item_dict)
 
     return {
@@ -326,17 +448,14 @@ class TagService(object):
       'cities': cities
     }
 
-  def do_format(self, name, score):
-    tag = self.InMemoryTag(name, self)
-    item = tag.get_items()
-    class_name = item.get('class', 'NORMAL')
-    if class_name == 'NORMAL':
+  def do_format(self, item, score):
+    if item.category == 'NORMAL':
       slug = ''
     else:
-      slug = item.get('slug', '')
+      slug = item.slug
 
     return {
-      name: {
+      item.tag_name: {
         'score': score,
         'slug': slug
       }

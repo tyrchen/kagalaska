@@ -28,10 +28,13 @@ def _smart_print(items, name=None):
   elif isinstance(items, dict):
     for item in items.items():
       _smart_print(item)
-  else:
+  elif isinstance(items, (int, long, float, bool, basestring)):
     print(items)
+  else:
+    print(getattr(items, 'name', '') or getattr(items, 'slug', '')
+      , items.__class__.__name__)
 
-def smart_print(items, name=None):
+def _dummy_smart_print(items, name=None):
   pass
 
 def rank_dict(aim_dict, top=0):
@@ -93,3 +96,5 @@ class TagFileHelper(object):
 
   def encode(self, name, parents):
     return '%s\t%s\n' %(name, ','.join(parents))
+
+smart_print = _dummy_smart_print
