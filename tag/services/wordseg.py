@@ -8,12 +8,14 @@ from tag.models import Tag
 from tag.utils import to_str
 
 import logging
+import re
 
 logger = logging.getLogger()
 
 WORDS_PATH = settings.TAG_TO_FILE_PATH
 CHARS_PATH = settings.CHARS_PATH
 RATE_PATH = settings.WORDS_RATE_PATH
+ENGLISH_SEGMENT_SEPARATOR = 'ZZZ'
 
 class Seg(object):
   """
@@ -47,13 +49,14 @@ class BaseSeg(object):
 
   def _load(self):
     for tag in Tag.objects():
-      name = tag.name
+      name = re.sub('\s', ENGLISH_SEGMENT_SEPARATOR, tag.name.strip())
       score = getattr(tag, 'score', settings.NEW_WORD_DEFAULT_VALUE)
-      self.add_keyword(name.strip(), score)
+      self.add_keyword(name, score)
 
   def add_word(self, name, score=settings.NEW_WORD_DEFAULT_VALUE):
-    self.add_keyword(name.strip(), float(score))
-    self.seg.seg.Dictionary.add(name)
+    keyword = re.sub('\s', ENGLISH_SEGMENT_SEPARATOR, name.strip())
+    self.add_keyword(keyword, float(score))
+    self.seg.seg.Dictionary.add(keyword)
 
   def is_keyword(self, word):
     return self.keywords.has_key(word)
@@ -67,11 +70,12 @@ class BaseSeg(object):
 
     results = []
 
+    words = re.sub('\s', ENGLISH_SEGMENT_SEPARATOR, words)
     words = to_str(words)
     for token in self.seg.seg_txt(words):
       token = token.decode('utf-8')
       if self.is_keyword(token):
-        results.append(token)
+        results.append(token.replace(ENGLISH_SEGMENT_SEPARATOR, ' '))
 
     d = {}
     for r in results:
