@@ -9,6 +9,7 @@ from tag.utils import to_str
 
 import logging
 import re
+from tag.utils.util import smart_print
 
 logger = logging.getLogger()
 
@@ -49,13 +50,12 @@ class BaseSeg(object):
 
   def _load(self):
     for tag in Tag.objects():
-      name = re.sub('\s', ENGLISH_SEGMENT_SEPARATOR, tag.name.strip())
       score = getattr(tag, 'score', settings.NEW_WORD_DEFAULT_VALUE)
-      self.add_keyword(name, score)
+      self.add_word(tag.name, score)
 
   def add_word(self, name, score=settings.NEW_WORD_DEFAULT_VALUE):
     keyword = re.sub('\s', ENGLISH_SEGMENT_SEPARATOR, name.strip())
-    self.add_keyword(keyword, float(score))
+    self.add_keyword(name.strip(), float(score))
     self.seg.seg.Dictionary.add(keyword)
 
   def is_keyword(self, word):
@@ -70,12 +70,15 @@ class BaseSeg(object):
 
     results = []
 
+    smart_print(words)
     words = re.sub('\s', ENGLISH_SEGMENT_SEPARATOR, words)
+    smart_print(words)
     words = to_str(words)
     for token in self.seg.seg_txt(words):
       token = token.decode('utf-8')
+      token = re.sub('Z+', ' ', token).strip()
       if self.is_keyword(token):
-        results.append(token.replace(ENGLISH_SEGMENT_SEPARATOR, ' '))
+        results.append(token)
 
     d = {}
     for r in results:
