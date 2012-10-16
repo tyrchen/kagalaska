@@ -8,10 +8,11 @@ from tag.algorithm.rank import LazyRank
 from tag.service import TagService
 from tag.services.wordseg import BaseSeg
 from mixins import ModifyMixin, DispatchMixin
-from tag.models import Place
+from tag.models import Place, Normal
 
 import json
 import logging
+from tag.utils.util import smart_print
 
 logger = logging.getLogger(__name__)
 
@@ -74,6 +75,7 @@ class WordSegFactory(protocol.Factory, ModifyMixin):
     return self.relations.get_names(**kwargs)
 
   def update(self, **kwargs):
+    smart_print(kwargs, "before update")
     self.remove(**kwargs)
     self.add(**kwargs)
     return {'success': True}
@@ -83,12 +85,26 @@ class WordSegFactory(protocol.Factory, ModifyMixin):
     return {'success': True}
 
   def place_update(self, **kwargs):
+    smart_print(kwargs, 'place_update')
     try:
-      slug = kwargs.pop('slug', '')
+      slug = kwargs.get('slug', '')
       if not slug:
         return {'success': False}
 
-      Place.cls_update(slug, **kwargs)
+      Place.cls_update(**kwargs)
+    except Exception:
+      return {'success': False}
+    else:
+      return {'success': True}
+
+  def normal_update(self, **kwargs):
+    smart_print(kwargs, 'normal_update')
+    try:
+      slug = kwargs.get('slug', '')
+      if not slug:
+        return {'success': False}
+
+      Normal.cls_update(**kwargs)
     except Exception:
       return {'success': False}
     else:

@@ -105,6 +105,16 @@ class Normal(object, Mongoable):
     self.slug = slug
     self.__dict__.update(kwargs)
 
+  @classmethod
+  def cls_update(cls, slug, **kwargs):
+    slug = slug
+    score = kwargs.pop('score', 1.0)
+    obj = {
+      'slug': slug,
+      'score': score
+    }
+    super(Normal, cls).cls_update(name=slug, obj={'$set': obj})
+
   @property
   def pk(self):
     return self.slug

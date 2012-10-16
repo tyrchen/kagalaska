@@ -62,7 +62,7 @@ class LazyRank(AggregationMixin):
     for content in self.contents:
       tags = self.parse(content['content'], content.get('weight', 1))
       tags_list.append(tags) # 根据内容和权重分词  {'content': '我爱北京', 'weight': 5}
-
+    smart_print(tags_list, "分词结果")
     # 将分词结果聚合
     tags_dict = self.aggregation(*tags_list)  # {'北京': 5}
     smart_print(tags_dict, "标签聚合")
