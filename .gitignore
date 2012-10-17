@@ -7,3 +7,4 @@ src
 build
 *.sock
 tag/data
+*.json

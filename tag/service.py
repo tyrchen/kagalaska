@@ -244,11 +244,11 @@ class TagService(object):
     if not name:
       return
 
-    score = getattr(tag, 'score', 1.0)
-    parents = getattr(tag, 'parents', [])
-    items = getattr(tag, 'items', [])
+    score = getattr(tag, 'score', 1.0) or 1.0
+    parents = getattr(tag, 'parents', []) or []
+    items = getattr(tag, 'items', []) or []
     instance_items = []
-    equal_to = getattr(tag, 'equal_to', '')
+    equal_to = getattr(tag, 'equal_to', '') or ''
     for item in items:
       slug = item['slug'] or name
       if (not force_add) and (self.memory_normal_items.exists(slug) or self.memory_place_items.exists(slug)):

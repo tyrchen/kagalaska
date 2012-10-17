@@ -3,3 +3,4 @@ pymongo
 -e git+git://github.com/pluskid/pymmseg-cpp.git#egg=pymmseg
 django
 -e git+git://github.com/chenchiyuan/ribida.git#egg=ribida
+-e git+git://github.com/chenchiyuan/shadow.git#egg=shadow
