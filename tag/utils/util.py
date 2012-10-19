@@ -97,4 +97,4 @@ class TagFileHelper(object):
   def encode(self, name, parents):
     return '%s\t%s\n' %(name, ','.join(parents))
 
-smart_print = _smart_print
+smart_print = _dummy_smart_print
