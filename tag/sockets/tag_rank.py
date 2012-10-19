@@ -6,7 +6,7 @@ from django.conf import settings
 from twisted.internet import protocol, reactor
 from tag.algorithm.rank import LazyRank
 from tag.service import TagService
-from tag.services.wordseg import BaseSeg
+from tag.services.wordseg import PythonSeg
 from mixins import ModifyMixin, DispatchMixin
 from tag.models import Place, Normal
 
@@ -26,7 +26,7 @@ class WordSegService(object):
   __instance = None
   def __new__(cls, *args, **kwargs):
     if not cls.__instance:
-      cls.__instance = BaseSeg()
+      cls.__instance = PythonSeg()
     return cls.__instance
 
 class WordSegProtocol(protocol.Protocol, DispatchMixin):
