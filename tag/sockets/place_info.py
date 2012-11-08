@@ -26,12 +26,13 @@ class PlaceInfoFactory(protocol.Factory):
 
   def get_by_slug(self, **json_data):
     slugs = json_data['slugs']
+    only = json_data.get('only', Place.ONLY_MAPPING['ONLY_USEFUL'])
     items = {}
     if isinstance(slugs, list):
       for slug in slugs:
-        items.update({slug: self.service.get_by_slug(slug, json_format=True)})
+        items.update({slug: self.service.get_by_slug(slug, only=only, json_format=True)})
     else:
-      items.update({slugs: self.service.get_by_slug(slugs, json_format=True)})
+      items.update({slugs: self.service.get_by_slug(slugs, only=only, json_format=True)})
 
     return items
 

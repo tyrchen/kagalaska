@@ -2,7 +2,6 @@
 # __author__ = chenchiyuan
 
 from __future__ import division, unicode_literals, print_function
-import copy
 from tag.models import Tag, Place, Normal
 from django.conf import settings
 from tag.utils.util import rank_dict, dict_from_items, smart_print
