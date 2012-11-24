@@ -363,6 +363,9 @@ class TagService(object):
       if any(relations):
         top_places.append((place, value))
 
+    if not available_countries:
+      return cities_dict.items(), cities_dict.items()
+
     if not top_places and not top_city:
       return top_country, []
     else:
